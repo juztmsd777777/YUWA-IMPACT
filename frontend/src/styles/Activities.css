@@ -1,0 +1,215 @@
+/* Activity Creation Styles */
+
+.activities-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.activities-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background-color: var(--color-bg-card);
+  padding: 24px 28px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.activities-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activities-heading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+.activities-subheading {
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+/* Two-Column Desktop Grid */
+.activities-grid-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Activity Form Card */
+.activity-form-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.form-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.program-radio-toggle-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.program-radio-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border-subtle);
+  background-color: var(--color-bg-subtle);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.program-radio-card:hover {
+  border-color: var(--color-primary-accent);
+}
+
+.program-radio-card.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-lightest);
+  box-shadow: 0 2px 8px rgba(27, 77, 62, 0.1);
+}
+
+.program-radio-card input {
+  accent-color: var(--color-primary);
+}
+
+.program-card-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+/* Guidelines Side Card */
+.guidelines-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.guidelines-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.guidelines-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guidelines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guideline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.guideline-icon {
+  color: var(--color-primary-light);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.guideline-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.guideline-item-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.guideline-item-desc {
+  font-size: 0.775rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* Quote Card */
+.activity-quote-card {
+  background: linear-gradient(135deg, var(--color-primary-lightest), #E8F5E9);
+  border: 1px solid var(--color-primary-subtle);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.activity-quote-decor {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  color: var(--color-primary-accent);
+  opacity: 0.3;
+}
+
+.activity-quote-text {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.activity-quote-author {
+  font-size: 0.775rem;
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .activities-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}

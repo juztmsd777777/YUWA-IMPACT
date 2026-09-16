@@ -1,0 +1,387 @@
+/* Participant Entry Styles */
+
+.participants-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.participants-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background-color: var(--color-bg-card);
+  padding: 24px 28px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.participants-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.participants-heading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+.participants-subheading {
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+.proceed-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(27, 77, 62, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.proceed-step-btn:hover {
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  box-shadow: 0 4px 12px rgba(27, 77, 62, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Two Column Desktop Layout */
+.participants-grid-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Form Card */
+.participant-form-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-card-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-label .required-star {
+  color: var(--color-accent-red);
+}
+
+.field-input, .field-select, .field-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-subtle);
+  font-size: 0.875rem;
+  color: var(--color-text-main);
+  transition: var(--transition-fast);
+}
+
+.field-input:focus, .field-select:focus, .field-textarea:focus {
+  outline: none;
+  background-color: #FFFFFF;
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
+}
+
+.field-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* Gender Radio Group */
+.gender-radio-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.gender-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-text-body);
+  cursor: pointer;
+}
+
+.gender-radio-label input[type="radio"] {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
+}
+
+/* Form Action Buttons */
+.form-buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.btn-clear {
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border-subtle);
+  transition: var(--transition-fast);
+}
+
+.btn-clear:hover {
+  background-color: var(--color-border-subtle);
+  color: var(--color-text-main);
+}
+
+.btn-save-participant {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background-color: var(--color-primary);
+  box-shadow: 0 2px 6px rgba(27, 77, 62, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.btn-save-participant:hover {
+  background-color: var(--color-primary-dark);
+  box-shadow: 0 4px 10px rgba(27, 77, 62, 0.35);
+}
+
+/* Success Feedback Banner */
+.participant-success-banner {
+  background-color: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #065F46;
+  font-size: 0.84rem;
+}
+
+.participant-success-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* Right Column: Participants Roster Card */
+.roster-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.roster-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.roster-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.roster-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: var(--color-primary-lightest);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary-subtle);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.roster-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.roster-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-light);
+  pointer-events: none;
+}
+
+.roster-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--color-text-main);
+}
+
+.roster-search-input:focus {
+  outline: none;
+  background-color: #FFFFFF;
+  border-color: var(--color-primary-light);
+}
+
+/* Participants List */
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.roster-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  transition: var(--transition-fast);
+}
+
+.roster-item:hover {
+  background-color: var(--color-primary-lightest);
+  border-color: var(--color-primary-subtle);
+}
+
+.roster-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.roster-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary-accent));
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.775rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.roster-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.roster-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  line-height: 1.2;
+}
+
+.roster-meta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.roster-school-name {
+  font-size: 0.7rem;
+  color: var(--color-primary-light);
+  font-weight: 600;
+}
+
+.roster-item-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roster-score-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border-subtle);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--color-primary);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .participants-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}

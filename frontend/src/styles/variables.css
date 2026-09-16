@@ -1,0 +1,57 @@
+:root {
+  /* Waste Warriors / YUWA Environmental Brand Palette */
+  --color-primary: #1B4D3E;
+  --color-primary-dark: #12382C;
+  --color-primary-light: #2D6A4F;
+  --color-primary-accent: #52B788;
+  --color-primary-subtle: #D8F3DC;
+  --color-primary-lightest: #F0FDF4;
+
+  /* Secondary & Accents */
+  --color-accent-amber: #D97706;
+  --color-accent-amber-light: #FEF3C7;
+  --color-accent-red: #DC2626;
+  --color-accent-red-light: #FEE2E2;
+  --color-accent-blue: #0284C7;
+  --color-accent-blue-light: #E0F2FE;
+
+  /* Neutral Backgrounds & Surfaces */
+  --color-bg-page: #F4F6F4;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sidebar: #FFFFFF;
+  --color-bg-subtle: #F8FAF8;
+  --color-bg-muted: #F1F5F9;
+
+  /* Text & Typography */
+  --color-text-main: #0F172A;
+  --color-text-body: #334155;
+  --color-text-muted: #64748B;
+  --color-text-light: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+
+  /* Borders & Dividers */
+  --color-border-subtle: #E2E8F0;
+  --color-border-focus: #2D6A4F;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --header-height: 68px;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 72px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}

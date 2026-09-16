@@ -1,148 +1,228 @@
-import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import useOnlineStatus from "../../hooks/useOnlineStatus.js";
-import { getPendingRecords, markRecordsSynced, countPending } from "../../offline/db.js";
-import { api } from "../../services/api.js";
-import { formatDate } from "../../utils/format.js";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Clock,
+  Building2,
+  CheckCircle2,
+  Plus,
+  UserPlus,
+  Camera,
+  Database,
+  Calendar,
+  MapPin,
+  ChevronRight,
+  Wifi,
+  WifiOff,
+  Sprout,
+  TreePine,
+  Sparkles
+} from 'lucide-react';
+import { useFieldApp } from '../../context/FieldAppContext';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import '../../styles/Home.css';
 
-export default function FieldHome() {
-  const online = useOnlineStatus();
-  const [pending, setPending] = useState(0);
-  const [localRecords, setLocalRecords] = useState([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState("");
+export const FieldHome = () => {
+  const navigate = useNavigate();
+  const { isOnline, fieldWorker, activities, offlineRecords } = useFieldApp();
 
-  const loadData = useCallback(async () => {
-    try {
-      const records = await getPendingRecords();
-      setLocalRecords(records);
-      const pendingCount = records.filter((r) => r.syncStatus === "pending").length;
-      setPending(pendingCount);
-    } catch {
-      setLocalRecords([]);
-      setPending(0);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Sync action
-  const handleSync = async () => {
-    if (!online) {
-      setSyncMsg("You are currently offline. Connect to the internet to sync.");
-      return;
-    }
-    try {
-      setIsSyncing(true);
-      setSyncMsg("");
-      const records = await getPendingRecords();
-      const unsynced = records.filter((r) => r.syncStatus === "pending");
-
-      if (unsynced.length === 0) {
-        setSyncMsg("Everything is already up to date.");
-        setIsSyncing(false);
-        return;
-      }
-
-      const res = await api.sync(unsynced);
-      if (res.synced && res.synced.length > 0) {
-        await markRecordsSynced(res.synced);
-        setSyncMsg(`Successfully synced ${res.synced.length} record(s)!`);
-      } else if (res.failed && res.failed.length > 0) {
-        setSyncMsg(`Sync completed with ${res.failed.length} failure(s).`);
-      }
-      await loadData();
-    } catch (err) {
-      setSyncMsg(`Sync error: ${err.message || "Failed to reach server"}`);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+  // Current formatted date/time
+  const formattedDate = 'Tue, 16 Sep 2025 • 10:24 AM';
+  const pendingRecordsCount = offlineRecords.filter(r => r.status === 'Pending Sync').length;
 
   return (
-    <section>
-      <h1>Field Home</h1>
-      <p className="muted">Record school activities and sync when connectivity is available.</p>
-
-      {syncMsg ? <div className="banner ok">{syncMsg}</div> : null}
-
-      {pending > 0 ? (
-        <div className="banner warn">
-          {pending} record(s) pending sync.
-          {online ? (
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              style={{ marginLeft: "1rem", padding: "0.25rem 0.75rem", fontSize: "0.85rem" }}
-            >
-              {isSyncing ? "Syncing..." : "Sync Now"}
-            </button>
-          ) : null}
+    <div className="home-container">
+      {/* 1. Welcome Section */}
+      <section className="home-welcome-header">
+        <div className="welcome-title-group">
+          <h1 className="welcome-heading">Good Morning, {fieldWorker.name.split(' ')[0]}!</h1>
+          <p className="welcome-subheading">Let's create a cleaner and greener tomorrow.</p>
         </div>
-      ) : (
-        <div className="banner ok">All local records synced</div>
-      )}
 
-      <div className="row">
-        <div className="stat">
-          <span>Local records</span>
-          <strong>{localRecords.length}</strong>
+        <div className="welcome-meta-group">
+          <div className="meta-chip">
+            <MapPin size={14} className="meta-chip-icon" />
+            <span>{fieldWorker.role} • {fieldWorker.location}</span>
+          </div>
+
+          <div className="meta-chip">
+            <Calendar size={14} className="meta-chip-icon" />
+            <span>{formattedDate}</span>
+          </div>
         </div>
-        <div className="stat">
-          <span>Pending sync</span>
-          <strong>{pending}</strong>
+      </section>
+
+      {/* 2. Metric Summary Cards */}
+      <section className="home-metrics-grid">
+        <div className="metric-summary-card">
+          <div className="metric-icon-box amber">
+            <Clock size={24} />
+          </div>
+          <div className="metric-content">
+            <span className="metric-label">Pending sync</span>
+            <div className="metric-value-row">
+              <span className="metric-value">{pendingRecordsCount}</span>
+              <span className="metric-tag">records</span>
+            </div>
+          </div>
         </div>
-        <div className="stat">
-          <span>Connection</span>
-          <strong>{online ? "Online" : "Offline"}</strong>
+
+        <div className="metric-summary-card">
+          <div className="metric-icon-box green">
+            <Building2 size={24} />
+          </div>
+          <div className="metric-content">
+            <span className="metric-label">Schools visited</span>
+            <div className="metric-value-row">
+              <span className="metric-value">{fieldWorker.stats.schoolsVisited}</span>
+              <span className="metric-tag">schools</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-summary-card">
+          <div className="metric-icon-box emerald">
+            <CheckCircle2 size={24} />
+          </div>
+          <div className="metric-content">
+            <span className="metric-label">Activities completed</span>
+            <div className="metric-value-row">
+              <span className="metric-value">{fieldWorker.stats.activitiesCompleted}</span>
+              <span className="metric-tag">done</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Quick Actions */}
+      <section className="quick-actions-section">
+        <div className="section-label">Quick Actions</div>
+        <div className="quick-actions-grid">
+          <div
+            className="action-card primary-action"
+            onClick={() => navigate('/programs')}
+            title="Start new activity workflow"
+          >
+            <div className="action-icon-circle">
+              <Plus size={22} strokeWidth={2.5} />
+            </div>
+            <div className="action-text-group">
+              <span className="action-text-title">+ Add Activity</span>
+              <span className="action-text-sub">Choose program & school</span>
+            </div>
+          </div>
+
+          <div
+            className="action-card"
+            onClick={() => navigate('/participants')}
+            title="Register student or view participants"
+          >
+            <div className="action-icon-circle">
+              <UserPlus size={20} />
+            </div>
+            <div className="action-text-group">
+              <span className="action-text-title">Add Participant</span>
+              <span className="action-text-sub">Student roster</span>
+            </div>
+          </div>
+
+          <div
+            className="action-card"
+            onClick={() => navigate('/photos')}
+            title="Upload photo evidence for activities"
+          >
+            <div className="action-icon-circle">
+              <Camera size={20} />
+            </div>
+            <div className="action-text-group">
+              <span className="action-text-title">Upload Photos</span>
+              <span className="action-text-sub">Field evidence</span>
+            </div>
+          </div>
+
+          <div
+            className="action-card"
+            onClick={() => navigate('/offline')}
+            title="Inspect locally stored offline records"
+          >
+            <div className="action-icon-circle">
+              <Database size={20} />
+            </div>
+            <div className="action-text-group">
+              <span className="action-text-title">View Offline Data</span>
+              <span className="action-text-sub">{pendingRecordsCount} pending sync</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Bottom Split: Recent Activities & Status Column */}
+      <div className="home-bottom-grid">
+        {/* Left: Recent Activities */}
+        <section className="recent-activities-card">
+          <div className="card-header-row">
+            <h2 className="card-title">Recent Activities</h2>
+            <Link to="/activities" className="card-link">
+              View All <ChevronRight size={14} />
+            </Link>
+          </div>
+
+          <div className="recent-activities-list">
+            {activities.slice(0, 3).map((act) => (
+              <div key={act.id} className="recent-activity-item">
+                <div className="activity-item-left">
+                  <div className="activity-item-icon">
+                    <TreePine size={20} />
+                  </div>
+                  <div className="activity-item-text">
+                    <span className="activity-item-name">{act.activityName}</span>
+                    <span className="activity-item-school">{act.schoolName}</span>
+                  </div>
+                </div>
+
+                <div className="activity-item-right">
+                  <StatusBadge
+                    status={act.status}
+                    text={act.status}
+                    size="sm"
+                  />
+                  <span className="activity-item-time">{act.timeAgo}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Right: Online/Offline Status & Organization Motto */}
+        <div className="side-status-column">
+          <div className="status-summary-box">
+            <div className={`status-pulse-circle ${isOnline ? 'online' : 'offline'}`}>
+              {isOnline ? <Wifi size={28} /> : <WifiOff size={28} />}
+            </div>
+            <h3 className="status-box-title">
+              {isOnline ? "You're Online" : "You're Offline"}
+            </h3>
+            <p className="status-box-desc">
+              {isOnline
+                ? "Data will sync automatically with central servers."
+                : "All records are safely stored on this device."}
+            </p>
+            <Link to="/sync">
+              <StatusBadge
+                status={isOnline ? 'online' : 'offline'}
+                text={isOnline ? 'Connected' : 'Offline Queue Active'}
+              />
+            </Link>
+          </div>
+
+          <div className="quote-motivation-box">
+            <Sprout size={80} className="quote-decor-icon" />
+            <div className="quote-headline">"Cleaner Communities, Brighter Futures"</div>
+            <div className="quote-subtext">Waste Warriors Society • Youth Impact</div>
+          </div>
         </div>
       </div>
-
-      <p style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-        <Link className="button" to="/programs">
-          + Add Activity
-        </Link>
-        {online && (
-          <button onClick={handleSync} disabled={isSyncing}>
-            {isSyncing ? "Syncing..." : "Sync Records"}
-          </button>
-        )}
-      </p>
-
-      <div className="card">
-        <h2>Local Activity Records</h2>
-        {localRecords.length === 0 ? (
-          <p className="muted">No activities recorded on this device yet.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Activity</th>
-                <th>Participants</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {localRecords.map((r) => (
-                <tr key={r.localId}>
-                  <td><strong>{r.type}</strong></td>
-                  <td>{r.data?.activityType || r.data?.name || "Activity"}</td>
-                  <td>{r.data?.participants || r.data?.age || "—"}</td>
-                  <td>
-                    <span className={`status-chip ${r.syncStatus === "synced" ? "online" : "offline"}`}>
-                      {r.syncStatus || "pending"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </section>
+    </div>
   );
-}
+};
 
+export default FieldHome;
