@@ -1,13 +1,13 @@
 import React from 'react';
-import TopHeader from '../../components/TopHeader';
-import StatCard from '../../components/StatCard';
-import ProgramCard from '../../components/ProgramCard';
-import ActivityTable from '../../components/ActivityTable';
+import TopHeader from '../components/TopHeader';
+import StatCard from '../components/StatCard';
+import ProgramCard from '../components/ProgramCard';
+import ActivityTable from '../components/ActivityTable';
 import { 
   OVERVIEW_METRICS, 
   PROGRAMS, 
   ALL_ACTIVITIES 
-} from '../../data/mockData';
+} from '../data/mockData';
 import { School, Users, ClipboardCheck, Camera } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -69,4 +69,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

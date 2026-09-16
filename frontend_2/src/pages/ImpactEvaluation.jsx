@@ -1,12 +1,12 @@
 import React from 'react';
-import TopHeader from '../../components/TopHeader';
-import StatCard from '../../components/StatCard';
+import TopHeader from '../components/TopHeader';
+import StatCard from '../components/StatCard';
 import { 
   IMPACT_KPIS, 
   BEFORE_AFTER_DATA, 
   PROGRAM_COMPARISON_DATA, 
   PROGRAM_PERFORMANCE_TABLE 
-} from '../../data/mockData';
+} from '../data/mockData';
 import { 
   BarChart, 
   Bar, 
@@ -203,4 +203,3 @@ export default function ImpactEvaluation() {
     </div>
   );
 }
-

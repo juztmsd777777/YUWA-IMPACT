@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import PhotoGallery from '../../components/PhotoGallery';
-import { ACTIVITY_DETAILS_DATA } from '../../data/mockData';
+import PhotoGallery from '../components/PhotoGallery';
+import { ACTIVITY_DETAILS_DATA } from '../data/mockData';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -18,7 +18,7 @@ export default function ActivityDetails() {
   return (
     <div className="main-content">
       {/* Back Link */}
-      <Link to="/dashboard" className="back-link-btn">
+      <Link to="/admin/dashboard" className="back-link-btn">
         <ArrowLeft size={16} />
         <span>Back to Dashboard</span>
       </Link>
@@ -58,7 +58,7 @@ export default function ActivityDetails() {
           <div className="activity-info-item">
             <span className="activity-info-label">School</span>
             <Link 
-              to={`/dashboard/schools/${activity.schoolId}`}
+              to={`/schools/${activity.schoolId}`}
               className="activity-info-value"
               style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px dotted var(--primary-green)' }}
             >
@@ -119,4 +119,3 @@ export default function ActivityDetails() {
     </div>
   );
 }
-
