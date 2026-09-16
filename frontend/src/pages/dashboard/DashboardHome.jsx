@@ -1,102 +1,72 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { mockDashboard } from "../../services/mockData.js";
-import { formatDate } from "../../utils/format.js";
+import React from 'react';
+import TopHeader from '../../components/TopHeader';
+import StatCard from '../../components/StatCard';
+import ProgramCard from '../../components/ProgramCard';
+import ActivityTable from '../../components/ActivityTable';
+import { 
+  OVERVIEW_METRICS, 
+  PROGRAMS, 
+  ALL_ACTIVITIES 
+} from '../../data/mockData';
+import { School, Users, ClipboardCheck, Camera } from 'lucide-react';
 
-export default function DashboardHome() {
-  const [program, setProgram] = useState("");
-  const [school, setSchool] = useState("");
-  const data = mockDashboard;
-
-  const filtered = useMemo(() => {
-    return data.activities.filter((a) => {
-      if (program && a.program !== program) return false;
-      if (school && a.school !== school) return false;
-      return true;
-    });
-  }, [data.activities, program, school]);
-
+export default function AdminDashboard() {
   return (
-    <section>
-      <h1>Admin dashboard</h1>
-      <p className="muted">FE 2 — swap mockDashboard for GET /api/dashboard when BE 3 is ready.</p>
-      <div className="row">
-        <div className="stat">
-          <span>Schools reached</span>
-          <strong>{data.totalSchools}</strong>
-        </div>
-        <div className="stat">
-          <span>Participants</span>
-          <strong>{data.totalParticipants}</strong>
-        </div>
-        <div className="stat">
-          <span>Activities</span>
-          <strong>{data.totalActivities}</strong>
-        </div>
-        <div className="stat">
-          <span>Photos</span>
-          <strong>{data.totalPhotos}</strong>
-        </div>
+    <div className="main-content">
+      {/* Page Header */}
+      <TopHeader 
+        title="Overview" 
+        subtitle="Waste Warriors Society environmental education and field performance metrics"
+        showDateRange={true}
+        showFilterButton={true}
+      />
+
+      {/* Summary / Statistic Cards */}
+      <div className="stat-grid-4">
+        <StatCard
+          label="Total schools reached"
+          value={OVERVIEW_METRICS.totalSchools.value}
+          trend={OVERVIEW_METRICS.totalSchools.trend}
+          isPositive={OVERVIEW_METRICS.totalSchools.isPositive}
+          icon={School}
+        />
+        <StatCard
+          label="Total students reached"
+          value={OVERVIEW_METRICS.totalStudents.value}
+          trend={OVERVIEW_METRICS.totalStudents.trend}
+          isPositive={OVERVIEW_METRICS.totalStudents.isPositive}
+          icon={Users}
+        />
+        <StatCard
+          label="Total activities"
+          value={OVERVIEW_METRICS.totalActivities.value}
+          trend={OVERVIEW_METRICS.totalActivities.trend}
+          isPositive={OVERVIEW_METRICS.totalActivities.isPositive}
+          icon={ClipboardCheck}
+        />
+        <StatCard
+          label="Total photos/evidence"
+          value={OVERVIEW_METRICS.totalEvidence.value}
+          trend={OVERVIEW_METRICS.totalEvidence.trend}
+          isPositive={OVERVIEW_METRICS.totalEvidence.isPositive}
+          icon={Camera}
+        />
       </div>
-      <div className="card">
-        <h2>Program statistics</h2>
-        {data.byProgram.map((p) => (
-          <p key={p.name}>
-            <strong>{p.name}</strong>: {p.schools} schools, {p.participants} participants,{" "}
-            {p.activities} activities, avg score {p.averageScore}
-          </p>
+
+      {/* Program Summary Cards */}
+      <div className="program-cards-grid">
+        {PROGRAMS.map((prog) => (
+          <ProgramCard key={prog.id} program={prog} />
         ))}
-        <p>
-          <Link to="/dashboard/evaluation">Impact / evaluation</Link>
-        </p>
       </div>
-      <div className="card">
-        <h2>Filters</h2>
-        <label htmlFor="f-program">Program</label>
-        <select id="f-program" value={program} onChange={(e) => setProgram(e.target.value)}>
-          <option value="">All</option>
-          <option>Ecolympics</option>
-          <option>Green Gurukul</option>
-        </select>
-        <label htmlFor="f-school">School</label>
-        <select id="f-school" value={school} onChange={(e) => setSchool(e.target.value)}>
-          <option value="">All</option>
-          <option>ABC School</option>
-        </select>
-      </div>
-      <div className="card">
-        <h2>Activities</h2>
-        {filtered.length === 0 ? (
-          <p className="muted">No activities match filters.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>School</th>
-                <th>Program</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Participants</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <Link to={`/dashboard/activities/${a.id}`}>{a.school}</Link>
-                  </td>
-                  <td>{a.program}</td>
-                  <td>{a.activityType}</td>
-                  <td>{formatDate(a.date)}</td>
-                  <td>{a.participants}</td>
-                  <td>{a.averageScore}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </section>
+
+      {/* Recent Activities Table */}
+      <ActivityTable 
+        activities={ALL_ACTIVITIES.slice(0, 5)} 
+        title="Recent Activities" 
+        showSchoolColumn={true} 
+      />
+    </div>
   );
 }
+
