@@ -58,10 +58,12 @@ export async function processBatchReports(reports = []) {
   // Cache programs map for dual-write lookups
   let programMap = new Map();
   try {
-    const progs = await Program.find();
-    progs.forEach((p) => {
-      programMap.set(p.name.toLowerCase().trim(), p._id);
-    });
+    if (mongoose.connection.readyState === 1) {
+      const progs = await Program.find();
+      progs.forEach((p) => {
+        programMap.set(p.name.toLowerCase().trim(), p._id);
+      });
+    }
   } catch (_e) {
     // If Program collection query fails or is empty, proceed without crashing
   }
