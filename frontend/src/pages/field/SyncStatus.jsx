@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw,
@@ -25,8 +25,13 @@ export const SyncStatus = () => {
     retryFailedRecords,
     syncLogs,
     offlineRecords,
-    syncSummary
+    syncSummary,
+    refreshData
   } = useFieldApp();
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   const pendingCount = (offlineRecords && offlineRecords.length > 0)
     ? offlineRecords.filter(r => r.status === 'Pending Sync' || r.status === 'pending').length

@@ -3,6 +3,7 @@ import TopHeader from '../../components/TopHeader';
 import StatCard from '../../components/StatCard';
 import ProgramCard from '../../components/ProgramCard';
 import ActivityTable from '../../components/ActivityTable';
+import PhotoGallery from '../../components/PhotoGallery';
 import { School, Users, ClipboardCheck, Camera } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -45,7 +46,8 @@ export default function AdminDashboard() {
             school: a.schoolName || (typeof a.schoolId === 'object' ? (a.schoolId?.schoolName || a.schoolId?.name) : '') || 'Partner School',
             schoolId: typeof a.schoolId === 'object' ? a.schoolId?._id : (a.schoolId || ''),
             participants: a.participantCount || a.participantsCount || 0,
-            avgScore: a.averageScore ? `${a.averageScore}%` : '85%'
+            avgScore: a.averageScore ? `${a.averageScore}%` : '85%',
+            photos: a.photos || a.photoUrls || []
           }));
           setActivities(normalized);
         }
@@ -91,6 +93,25 @@ export default function AdminDashboard() {
         }
       ];
 
+  // Extract all verified photos from activities
+  const allVerifiedPhotos = [];
+  activities.forEach((act, actIdx) => {
+    const actPhotos = Array.isArray(act.photos) && act.photos.length > 0 ? act.photos : [];
+    actPhotos.forEach((ph, i) => {
+      const url = typeof ph === 'string' ? ph : (ph.url || ph.fileUrl || ph.preview);
+      if (url) {
+        allVerifiedPhotos.push({
+          id: `dash-ph-${act.id || actIdx}-${i}`,
+          title: act.activity || 'Field Evidence',
+          caption: `${act.school} - ${act.activity}`,
+          date: act.date || 'Verified',
+          school: act.school,
+          url
+        });
+      }
+    });
+  });
+
   return (
     <div className="main-content">
       {/* Page Header */}
@@ -126,7 +147,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           label="Total photos/evidence"
-          value={String(summary.totalPhotos)}
+          value={String(summary.totalPhotos || allVerifiedPhotos.length)}
           trend="Live DB"
           isPositive={true}
           icon={Camera}
@@ -142,10 +163,18 @@ export default function AdminDashboard() {
 
       {/* Recent Activities Table */}
       <ActivityTable 
-        activities={activities.slice(0, 6)} 
+        activities={activities.slice(0, 8)} 
         title="Recent Activities in Database" 
         showSchoolColumn={true} 
       />
+
+      {/* Verified Evidence Photo Gallery */}
+      {allVerifiedPhotos.length > 0 && (
+        <PhotoGallery 
+          photos={allVerifiedPhotos} 
+          title="Verified Field Evidence & Photos (Live Database)" 
+        />
+      )}
     </div>
   );
 }
