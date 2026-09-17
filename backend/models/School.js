@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 /**
  * School Schema
@@ -8,23 +8,26 @@ const schoolSchema = new mongoose.Schema(
   {
     schoolName: {
       type: String,
-      required: [true, 'School name is required'],
+      trim: true
+    },
+    name: {
+      type: String,
       trim: true
     },
     location: {
       type: String,
-      required: [true, 'School location/address is required'],
-      trim: true
+      trim: true,
+      default: ''
     },
     district: {
       type: String,
-      required: [true, 'District is required'],
-      trim: true
+      trim: true,
+      default: ''
     },
     state: {
       type: String,
-      required: [true, 'State is required'],
-      trim: true
+      trim: true,
+      default: ''
     },
     contactPerson: {
       type: String,
@@ -44,19 +47,40 @@ const schoolSchema = new mongoose.Schema(
     },
     program: {
       type: String,
-      required: [true, 'Program is required'],
       enum: {
         values: ['Ecolympics', 'Green Gurukul', 'Both'],
         message: '{VALUE} is not a supported program. Must be Ecolympics, Green Gurukul, or Both'
       },
       default: 'Both'
+    },
+    programId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Program'
     }
   },
   {
-    timestamps: true // Automatically adds createdAt and updatedAt
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
 
-const School = mongoose.model('School', schoolSchema);
+// Keep name and schoolName mutually synchronized for dashboard & API compatibility
+schoolSchema.pre('validate', function (next) {
+  if (!this.schoolName && this.name) {
+    this.schoolName = this.name;
+  }
+  if (!this.name && this.schoolName) {
+    this.name = this.schoolName;
+  }
+  if (!this.schoolName && !this.name) {
+    this.invalidate('schoolName', 'School name is required');
+  }
+  next();
+});
 
-module.exports = School;
+const School = mongoose.models.School || mongoose.model('School', schoolSchema);
+
+export default School;
+export { School };
+

@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const School = require('../models/School');
+import mongoose from 'mongoose';
+import School from '../models/School.js';
 
 /**
  * @desc    Create a new school
@@ -8,25 +8,31 @@ const School = require('../models/School');
  */
 const createSchool = async (req, res) => {
   try {
-    const { schoolName, location, district, state, contactPerson, contactPhone, contactEmail, program } = req.body;
+    const schoolName = req.body.schoolName || req.body.name;
+    const location = req.body.location || '';
+    const district = req.body.district || '';
+    const state = req.body.state || '';
+    const { contactPerson, contactPhone, contactEmail, program, programId } = req.body;
 
     // Validate required fields
-    if (!schoolName || !location || !district || !state) {
+    if (!schoolName) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide schoolName, location, district, and state'
+        message: 'Please provide schoolName (or name)'
       });
     }
 
     const school = await School.create({
       schoolName,
+      name: schoolName,
       location,
       district,
       state,
       contactPerson,
       contactPhone,
       contactEmail,
-      program
+      program: program || 'Both',
+      programId
     });
 
     return res.status(201).json({
@@ -206,10 +212,24 @@ const deleteSchool = async (req, res) => {
   }
 };
 
-module.exports = {
+export const listSchools = getSchools;
+export const getSchool = getSchoolById;
+
+export {
   createSchool,
   getSchools,
   getSchoolById,
   updateSchool,
   deleteSchool
 };
+
+export default {
+  createSchool,
+  getSchools,
+  getSchoolById,
+  updateSchool,
+  deleteSchool,
+  listSchools,
+  getSchool
+};
+

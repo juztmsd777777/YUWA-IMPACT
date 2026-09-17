@@ -1,12 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import {
   createParticipant,
   getParticipants,
   getParticipantById,
   updateParticipant,
   deleteParticipant
-} = require('../controllers/participantController');
+} from '../controllers/participantController.js';
+
+const router = express.Router();
 
 // Route: /api/participants
 router.route('/')
@@ -19,4 +20,5 @@ router.route('/:id')
   .put(updateParticipant)
   .delete(deleteParticipant);
 
-module.exports = router;
+export default router;
+

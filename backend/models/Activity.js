@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 /**
  * Activity Schema
@@ -8,43 +8,44 @@ const mongoose = require('mongoose');
 const activitySchema = new mongoose.Schema(
   {
     schoolId: {
+      type: mongoose.Schema.Types.Mixed,
+      ref: 'School'
+    },
+    schoolName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    programId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'School',
-      required: [true, 'School ID is required']
+      ref: 'Program'
     },
     program: {
       type: String,
-      required: [true, 'Program is required'],
-      enum: {
-        values: ['Ecolympics', 'Green Gurukul'],
-        message: '{VALUE} is not a valid program. Must be Ecolympics or Green Gurukul'
-      }
+      default: 'Ecolympics'
+    },
+    programName: {
+      type: String,
+      default: ''
     },
     activityName: {
       type: String,
-      required: [true, 'Activity name is required'],
+      trim: true
+    },
+    title: {
+      type: String,
+      trim: true
+    },
+    name: {
+      type: String,
       trim: true
     },
     activityType: {
       type: String,
-      required: [true, 'Activity type is required'],
-      enum: {
-        values: [
-          'Waste Audit',
-          'Cleanliness Drive',
-          'Segregation Workshop',
-          'Composting Session',
-          'Upcycling Workshop',
-          'Awareness Rally',
-          'Quiz / Competition',
-          'Other'
-        ],
-        message: '{VALUE} is not a valid activity type'
-      }
+      default: 'Other'
     },
     date: {
       type: Date,
-      required: [true, 'Activity date is required'],
       default: Date.now
     },
     description: {
@@ -57,31 +58,48 @@ const activitySchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Participant count cannot be negative']
     },
+    participantsCount: {
+      type: Number,
+      default: 0
+    },
+    averageScore: {
+      type: Number,
+      default: 0
+    },
     participants: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.Mixed,
         ref: 'Participant'
       }
     ],
-    photos: [
-      {
-        url: {
-          type: String,
-          trim: true
-        },
-        caption: {
-          type: String,
-          trim: true,
-          default: ''
-        }
-      }
-    ]
+    photos: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: []
+    }
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
 
-const Activity = mongoose.model('Activity', activitySchema);
+activitySchema.pre('validate', function (next) {
+  const chosenName = this.activityName || this.name || this.title || 'YUWA Activity';
+  if (!this.activityName) this.activityName = chosenName;
+  if (!this.name) this.name = chosenName;
+  if (!this.title) this.title = chosenName;
 
-module.exports = Activity;
+  if (this.participantCount && !this.participantsCount) {
+    this.participantsCount = this.participantCount;
+  } else if (this.participantsCount && !this.participantCount) {
+    this.participantCount = this.participantsCount;
+  }
+  next();
+});
+
+const Activity = mongoose.models.Activity || mongoose.model('Activity', activitySchema);
+
+export default Activity;
+export { Activity };
+

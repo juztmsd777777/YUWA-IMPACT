@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 /**
  * Participant Schema
@@ -9,48 +9,93 @@ const participantSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Participant name is required'],
+      trim: true
+    },
+    fullName: {
+      type: String,
       trim: true
     },
     age: {
       type: Number,
-      required: [true, 'Age is required'],
       min: [4, 'Age must be at least 4'],
-      max: [25, 'Age cannot exceed 25']
+      max: [35, 'Age cannot exceed 35'],
+      default: 12
     },
     gender: {
       type: String,
-      enum: {
-        values: ['Male', 'Female', 'Other', 'Prefer not to say'],
-        message: '{VALUE} is not a valid gender'
-      },
       default: 'Prefer not to say'
     },
     schoolId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'School', // Reference to the School model
-      required: [true, 'School ID is required']
+      type: mongoose.Schema.Types.Mixed,
+      ref: 'School'
+    },
+    schoolName: {
+      type: String,
+      trim: true,
+      default: ''
     },
     gradeOrClass: {
       type: String,
       trim: true,
       default: ''
     },
+    className: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    contact: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    score: {
+      type: Number,
+      default: 0
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     program: {
       type: String,
-      required: [true, 'Program is required'],
-      enum: {
-        values: ['Ecolympics', 'Green Gurukul', 'Both'],
-        message: '{VALUE} is not a supported program. Must be Ecolympics, Green Gurukul, or Both'
-      },
       default: 'Both'
+    },
+    programId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Program'
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
 
-const Participant = mongoose.model('Participant', participantSchema);
+participantSchema.pre('validate', function (next) {
+  if (!this.name && this.fullName) {
+    this.name = this.fullName;
+  }
+  if (!this.fullName && this.name) {
+    this.fullName = this.name;
+  }
+  if (!this.gradeOrClass && this.className) {
+    this.gradeOrClass = this.className;
+  }
+  if (!this.className && this.gradeOrClass) {
+    this.className = this.gradeOrClass;
+  }
+  if (!this.name && !this.fullName) {
+    this.name = 'Participant';
+    this.fullName = 'Participant';
+  }
+  next();
+});
 
-module.exports = Participant;
+const Participant = mongoose.models.Participant || mongoose.model('Participant', participantSchema);
+
+export default Participant;
+export { Participant };
+

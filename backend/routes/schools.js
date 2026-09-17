@@ -1,7 +1,3 @@
-import { Router } from "express";
-import { createSchool, listSchools } from "../controllers/schoolController.js";
+import schoolRoutes from "./schoolRoutes.js";
+export default schoolRoutes;
 
-const router = Router();
-router.get("/", listSchools);
-router.post("/", createSchool);
-export default router;

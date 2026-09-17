@@ -1,36 +1,67 @@
-const express = require('express');
-const cors = require('cors');
+import express from "express";
+import cors from "cors";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import mongoose from "mongoose";
 
-// Initialize the Express application
+import schoolRoutes from "./routes/schoolRoutes.js";
+import participantRoutes from "./routes/participantRoutes.js";
+import activityRoutes from "./routes/activityRoutes.js";
+import programs from "./routes/programs.js";
+import assessments from "./routes/assessments.js";
+import dashboard from "./routes/dashboard.js";
+import sync from "./routes/sync.js";
+import upload from "./routes/upload.js";
+
+import notFound from "./middleware/notFound.js";
+import errorHandler from "./middleware/errorHandler.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Initialize Express
 const app = express();
 
-// Core Middleware
-app.use(cors()); // Allows frontend apps on other ports/domains to communicate with this API
-app.use(express.json()); // Parses incoming requests with JSON payloads into req.body
+// Core Middlewares
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Basic Health Check Route (used to verify the server is running)
-app.get('/', (req, res) => {
-  res.status(200).json({
+// Static uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Health Check Endpoints
+app.get("/api/health", (_req, res) => {
+  res.json({
     success: true,
-    message: 'YUWA Impact & Evaluation Portal API is running',
-    timestamp: new Date().toISOString()
+    status: "ok",
+    mongo: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Resource Routes
-const schoolRoutes = require('./routes/schoolRoutes');
-const participantRoutes = require('./routes/participantRoutes');
-const activityRoutes = require('./routes/activityRoutes');
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "YUWA Impact & Evaluation Portal API is running",
+    status: "healthy",
+    mongo: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
+  });
+});
 
-app.use('/api/schools', schoolRoutes);
-app.use('/api/participants', participantRoutes);
-app.use('/api/activities', activityRoutes);
+// Resource & Business Routes
+app.use("/api/schools", schoolRoutes);
+app.use("/api/participants", participantRoutes);
+app.use("/api/activities", activityRoutes);
+app.use("/api/programs", programs);
+app.use("/api/assessments", assessments);
+app.use("/api/sync", sync);
+app.use("/api/upload", upload);
+app.use("/api/photos/upload", upload);
+app.use("/api", dashboard);
 
-// Error Handling Middlewares (must be registered after routes)
-const notFound = require('./middleware/notFound');
-const errorHandler = require('./middleware/errorHandler');
-
+// Error Handling Middlewares
 app.use(notFound);
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

@@ -1,7 +1,3 @@
-import { Router } from "express";
-import { createParticipant, listParticipants } from "../controllers/participantController.js";
+import participantRoutes from "./participantRoutes.js";
+export default participantRoutes;
 
-const router = Router();
-router.get("/", listParticipants);
-router.post("/", createParticipant);
-export default router;

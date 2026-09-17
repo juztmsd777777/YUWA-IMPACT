@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const Participant = require('../models/Participant');
-const School = require('../models/School');
+import mongoose from 'mongoose';
+import Participant from '../models/Participant.js';
+import School from '../models/School.js';
 
 /**
  * @desc    Create a new participant
@@ -9,47 +9,52 @@ const School = require('../models/School');
  */
 const createParticipant = async (req, res) => {
   try {
-    const { name, age, gender, schoolId, gradeOrClass, program } = req.body;
+    const name = req.body.name || req.body.fullName;
+    const age = req.body.age !== undefined ? req.body.age : 12;
+    const gender = req.body.gender || 'Prefer not to say';
+    const schoolId = req.body.schoolId;
+    const gradeOrClass = req.body.gradeOrClass || req.body.className || '';
+    const { program, schoolName, contact, score, notes } = req.body;
 
     // Validate required fields
-    if (!name || age === undefined || !schoolId) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, age, and schoolId'
+        message: 'Please provide name (or fullName)'
       });
     }
 
-    // Validate schoolId format
-    if (!mongoose.Types.ObjectId.isValid(schoolId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid school ID format'
-      });
+    let programValue = program || 'Both';
+    if (schoolId && mongoose.Types.ObjectId.isValid(schoolId)) {
+      const schoolExists = await School.findById(schoolId);
+      if (schoolExists?.program) {
+        programValue = program || schoolExists.program;
+      }
     }
 
-    // Relationship integrity check: ensure school exists in database
-    const schoolExists = await School.findById(schoolId);
-    if (!schoolExists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Referenced school does not exist'
-      });
-    }
 
     const participant = await Participant.create({
       name,
+      fullName: name,
       age,
       gender,
       schoolId,
+      schoolName: schoolName || '',
       gradeOrClass,
-      program: program || schoolExists.program
+      className: gradeOrClass,
+      contact: contact || '',
+      score: score || 0,
+      notes: notes || '',
+      program: programValue
     });
 
-    // Populate school details for immediate frontend display
-    const populatedParticipant = await Participant.findById(participant._id).populate(
-      'schoolId',
-      'schoolName district state'
-    );
+    let populatedParticipant = participant;
+    if (schoolId && mongoose.Types.ObjectId.isValid(schoolId)) {
+      populatedParticipant = (await Participant.findById(participant._id).populate(
+        'schoolId',
+        'schoolName name district state'
+      )) || participant;
+    }
 
     return res.status(201).json({
       success: true,
@@ -259,10 +264,24 @@ const deleteParticipant = async (req, res) => {
   }
 };
 
-module.exports = {
+export const listParticipants = getParticipants;
+export const getParticipant = getParticipantById;
+
+export {
   createParticipant,
   getParticipants,
   getParticipantById,
   updateParticipant,
   deleteParticipant
 };
+
+export default {
+  createParticipant,
+  getParticipants,
+  getParticipantById,
+  updateParticipant,
+  deleteParticipant,
+  listParticipants,
+  getParticipant
+};
+

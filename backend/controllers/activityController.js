@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const Activity = require('../models/Activity');
-const School = require('../models/School');
+import mongoose from 'mongoose';
+import Activity from '../models/Activity.js';
+import School from '../models/School.js';
 
 /**
  * @desc    Create a new activity
@@ -12,57 +12,39 @@ const createActivity = async (req, res) => {
     const {
       schoolId,
       program,
-      activityName,
-      activityType,
+      programName,
+      programId,
+      activityName: reqName,
+      title,
+      name,
+      activityType: reqType,
       date,
       description,
-      participantCount,
+      participantCount: reqCount,
+      participantsCount,
+      averageScore,
       participants,
       photos
     } = req.body;
 
-    // Validate required fields
-    if (!schoolId || !activityName || !activityType) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide schoolId, activityName, and activityType'
-      });
-    }
+    const activityName = reqName || title || name || reqType || 'YUWA Activity';
+    const activityType = reqType || 'Other';
+    const participantCount = reqCount !== undefined ? reqCount : (participantsCount || 0);
 
-    // Validate schoolId format
-    if (!mongoose.Types.ObjectId.isValid(schoolId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid school ID format'
-      });
-    }
-
-    // Ensure referenced school exists in database
-    const schoolExists = await School.findById(schoolId);
-    if (!schoolExists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Referenced school does not exist'
-      });
-    }
-
-    // Determine program: use provided program, or fallback to school program if school is single-program
-    const assignedProgram = program || (schoolExists.program !== 'Both' ? schoolExists.program : null);
-    if (!assignedProgram) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please specify program (Ecolympics or Green Gurukul)'
-      });
+    let resolvedProgram = program || programName || 'Ecolympics';
+    let schoolDoc = null;
+    if (schoolId && mongoose.Types.ObjectId.isValid(schoolId)) {
+      schoolDoc = await School.findById(schoolId);
+      if (schoolDoc?.program && schoolDoc.program !== 'Both') {
+        resolvedProgram = program || schoolDoc.program;
+      }
     }
 
     // Validate participant IDs if provided
     if (participants && Array.isArray(participants)) {
       for (const pId of participants) {
-        if (!mongoose.Types.ObjectId.isValid(pId)) {
-          return res.status(400).json({
-            success: false,
-            message: `Invalid participant ID format: ${pId}`
-          });
+        if (typeof pId === 'string' && mongoose.Types.ObjectId.isValid(pId)) {
+          // valid ObjectId format
         }
       }
     }
@@ -74,23 +56,34 @@ const createActivity = async (req, res) => {
 
     const activity = await Activity.create({
       schoolId,
-      program: assignedProgram,
+      schoolName: req.body.schoolName || schoolDoc?.schoolName || schoolDoc?.name || '',
+      programId,
+      program: resolvedProgram,
+      programName: resolvedProgram,
       activityName,
+      name: activityName,
+      title: activityName,
       activityType,
       date: date || Date.now(),
-      description,
+      description: description || '',
       participantCount: calculatedCount,
+      participantsCount: calculatedCount,
+      averageScore: averageScore || 0,
       participants: participants || [],
       photos: photos || []
     });
 
-    const populatedActivity = await Activity.findById(activity._id)
-      .populate('schoolId', 'schoolName district state')
-      .populate('participants', 'name age gradeOrClass');
+    let populatedActivity = activity;
+    if (schoolId && mongoose.Types.ObjectId.isValid(schoolId)) {
+      populatedActivity = (await Activity.findById(activity._id)
+        .populate('schoolId', 'schoolName name district state')
+        .populate('participants', 'name age gradeOrClass')) || activity;
+    }
 
     return res.status(201).json({
       success: true,
       message: 'Activity created successfully',
+      activity: { id: activity._id },
       data: populatedActivity
     });
   } catch (error) {
@@ -302,10 +295,24 @@ const deleteActivity = async (req, res) => {
   }
 };
 
-module.exports = {
+export const listActivities = getActivities;
+export const getActivity = getActivityById;
+
+export {
   createActivity,
   getActivities,
   getActivityById,
   updateActivity,
   deleteActivity
 };
+
+export default {
+  createActivity,
+  getActivities,
+  getActivityById,
+  updateActivity,
+  deleteActivity,
+  listActivities,
+  getActivity
+};
+

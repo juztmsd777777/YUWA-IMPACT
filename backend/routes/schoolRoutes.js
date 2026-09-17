@@ -1,12 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import {
   createSchool,
   getSchools,
   getSchoolById,
   updateSchool,
   deleteSchool
-} = require('../controllers/schoolController');
+} from '../controllers/schoolController.js';
+
+const router = express.Router();
 
 // Route: /api/schools
 router.route('/')
@@ -19,4 +20,5 @@ router.route('/:id')
   .put(updateSchool)
   .delete(deleteSchool);
 
-module.exports = router;
+export default router;
+
