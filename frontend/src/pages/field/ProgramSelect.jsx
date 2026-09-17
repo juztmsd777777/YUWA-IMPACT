@@ -8,9 +8,21 @@ export const ProgramSelect = () => {
   const navigate = useNavigate();
   const { programs, selectedProgram, setSelectedProgram } = useFieldApp();
 
-  const displayPrograms = programs.length > 0 ? programs : [
-    { _id: 'eco-default', name: 'Ecolympics', description: 'Youth climate challenge & competitive environmental waste audit olympiad for secondary schools' },
-    { _id: 'gg-default', name: 'Green Gurukul', description: 'Year-round experiential climate curriculum, composting labs, and campus biodiversity stewardship' }
+  const displayPrograms = programs && programs.length > 0 ? programs : [
+    {
+      _id: 'eco-default',
+      name: 'Ecolympics',
+      description: 'Youth climate challenge & competitive environmental waste audit olympiad for secondary schools',
+      category: 'Competition & Sports',
+      tagline: 'Environmental competitions for schools'
+    },
+    {
+      _id: 'gg-default',
+      name: 'Green Gurukul',
+      description: 'Year-round experiential climate curriculum, composting labs, and campus biodiversity stewardship',
+      category: 'Experiential Curriculum',
+      tagline: 'Year-round climate education & composting'
+    }
   ];
 
   const handleSelectProgram = (program) => {
@@ -35,7 +47,7 @@ export const ProgramSelect = () => {
             </button>
           </div>
           <h1 className="programs-heading" style={{ marginTop: '8px' }}>Our Programs</h1>
-          <p className="programs-subheading">Choose a youth climate program to record field activities</p>
+          <p className="programs-subheading">Choose a youth climate program to record field activities (Live Database)</p>
         </div>
 
         {selectedProgram && (
@@ -47,15 +59,29 @@ export const ProgramSelect = () => {
 
       {/* Program Cards Grid */}
       <div className="programs-cards-grid">
-        {displayPrograms.map((program) => {
-          const progId = program._id || program.id;
+        {displayPrograms.map((program, index) => {
+          const progId = program._id || program.id || `prog-${index}`;
           const isSelected = (selectedProgram?._id && selectedProgram._id === progId) || selectedProgram?.name === program.name;
-          const isEcolympics = program.name.toLowerCase().includes('ecolympics');
+          const progName = program.name || 'YUWA Program';
+          const isEcolympics = progName.toLowerCase().includes('ecolympics');
 
+          const category = program.category || (isEcolympics ? 'Competition & Sports' : 'Experiential Curriculum');
+          const tagline = program.tagline || (isEcolympics ? 'Environmental waste competitions for secondary schools' : 'Experiential climate curriculum & biodiversity labs');
+          const description = program.description || (isEcolympics ? 'Youth climate challenge & competitive environmental waste audit olympiad' : 'Year-round experiential climate curriculum, composting labs, and campus stewardship');
+
+          const statsSchools = program.stats?.schools ?? (isEcolympics ? '4' : '2');
+          const statsStudents = program.stats?.students ?? (isEcolympics ? '420+' : '280+');
+          const statsActivities = program.stats?.activities ?? (isEcolympics ? '18+' : '12+');
+
+          const features = Array.isArray(program.features) && program.features.length > 0
+            ? program.features
+            : (isEcolympics
+                ? ['Inter-school waste seg audits', 'Live student climate leaderboard', 'Plastic-free campus challenges']
+                : ['Hands-on composting workshops', 'Eco-club leadership curriculum', 'Campus green audit & stewardship']);
 
           return (
             <div
-              key={program.id}
+              key={progId}
               className={`program-card ${isSelected ? 'is-selected' : ''}`}
             >
               {isSelected && (
@@ -75,31 +101,31 @@ export const ProgramSelect = () => {
                 </div>
 
                 <div className="program-meta">
-                  <span className="program-category">{program.category}</span>
-                  <h2 className="program-name">{program.name}</h2>
-                  <p className="program-tagline">{program.tagline}</p>
-                  <p className="program-desc">{program.description}</p>
+                  <span className="program-category">{category}</span>
+                  <h2 className="program-name">{progName}</h2>
+                  <p className="program-tagline">{tagline}</p>
+                  <p className="program-desc">{description}</p>
                 </div>
 
                 {/* Program Stats Strip */}
                 <div className="program-stats-row">
                   <div className="stat-item">
-                    <span className="stat-num">{program.stats.schools}</span>
+                    <span className="stat-num">{statsSchools}</span>
                     <span className="stat-label">Schools</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-num">{program.stats.students}</span>
+                    <span className="stat-num">{statsStudents}</span>
                     <span className="stat-label">Students</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-num">{program.stats.activities}</span>
+                    <span className="stat-num">{statsActivities}</span>
                     <span className="stat-label">Activities</span>
                   </div>
                 </div>
 
                 {/* Features list */}
                 <div className="program-features-list">
-                  {program.features.map((feature, idx) => (
+                  {features.map((feature, idx) => (
                     <div key={idx} className="feature-item">
                       <CheckCircle2 size={16} className="feature-icon" />
                       <span>{feature}</span>

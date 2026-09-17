@@ -70,7 +70,7 @@ export async function getDashboardSummary() {
     );
 
     const totalProgParticipants = progActivities.reduce(
-      (acc, a) => acc + (a.participants || 0),
+      (acc, a) => acc + (a.participantCount || a.participantsCount || (Array.isArray(a.participants) ? a.participants.length : 0)),
       0
     );
 

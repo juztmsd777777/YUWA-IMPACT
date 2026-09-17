@@ -67,7 +67,7 @@ export default function AdminDashboard() {
         badge: p.name,
         description: p.description || 'Environmental learning & waste segregation program',
         schoolsReached: p.schools || summary.totalSchools,
-        studentsReached: p.participants || summary.totalParticipants,
+        studentsReached: typeof p.participants === 'number' ? p.participants : (Array.isArray(p.participants) ? p.participants.length : (parseInt(p.participants, 10) || summary.totalParticipants)),
         avgScore: p.averageScore ? `${p.averageScore}%` : '88%'
       }))
     : [

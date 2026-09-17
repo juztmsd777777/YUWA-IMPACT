@@ -56,6 +56,12 @@ export const FieldAppProvider = ({ children }) => {
   const [syncProgress, setSyncProgress] = useState(100);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('Checking database...');
+  const [syncSummary, setSyncSummary] = useState({
+    totalRecords: 0,
+    syncedRecords: 0,
+    pendingRecords: 0,
+    failedRecords: 0
+  });
 
   // Fetch all live data from database
   const refreshData = useCallback(async () => {
@@ -110,8 +116,14 @@ export const FieldAppProvider = ({ children }) => {
       // Fetch live sync status & logs from DB
       const syncStatus = await syncService.getSyncStatus();
       if (syncStatus) {
-        setSyncProgress(syncStatus.progressPercent || 100);
+        setSyncProgress(syncStatus.progressPercent !== undefined ? syncStatus.progressPercent : 100);
         setSyncLogs(syncStatus.logs || []);
+        setSyncSummary({
+          totalRecords: syncStatus.totalRecords || 0,
+          syncedRecords: syncStatus.syncedRecords || 0,
+          pendingRecords: syncStatus.pendingRecords || 0,
+          failedRecords: syncStatus.failedRecords || 0
+        });
         if (syncStatus.lastSynced) {
           try {
             setLastSyncTime(new Date(syncStatus.lastSynced).toLocaleString());
@@ -319,6 +331,7 @@ export const FieldAppProvider = ({ children }) => {
         addPhotos,
         removePhoto,
         syncProgress,
+        syncSummary,
         isSyncing,
         lastSyncTime,
         triggerSync,
