@@ -1,0 +1,1 @@
+# Middleware functions run between receiving a request and sending a response (e.g. error handler, validation)

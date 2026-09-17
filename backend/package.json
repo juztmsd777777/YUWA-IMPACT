@@ -1,18 +1,25 @@
 {
-  "name": "yuwa-backend",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "name": "yuwa-portal-backend",
+  "version": "1.0.0",
+  "description": "Backend API for YUWA Impact & Evaluation Portal - Waste Warriors Society",
+  "main": "server.js",
   "scripts": {
-    "dev": "node --watch server.js",
     "start": "node server.js",
-    "seed": "node seed/seed.js"
+    "dev": "node --watch server.js"
   },
+  "keywords": [
+    "waste-warriors",
+    "yuwa",
+    "express",
+    "mongodb",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "mongoose": "^8.15.0",
-    "multer": "^2.0.0"
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
   }
 }
