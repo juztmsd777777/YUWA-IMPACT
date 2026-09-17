@@ -39,6 +39,7 @@ export const api = {
   },
   dashboard: () => request("/dashboard"),
   sync: (records) => request("/sync", { method: "POST", body: JSON.stringify({ records }) }),
+  syncBatch: (reports) => request("/sync/batch", { method: "POST", body: JSON.stringify({ reports }) }),
   evaluation: (programId) =>
     request(programId ? `/evaluation/${programId}` : "/evaluation"),
   uploadPhoto: async (file) => {
@@ -52,5 +53,20 @@ export const api = {
     if (!res.ok) throw new Error(body.message || "Failed to upload photo");
     return body;
   },
+  uploadProofs: async (files) => {
+    const formData = new FormData();
+    const fileList = Array.isArray(files) ? files : [files];
+    for (const file of fileList) {
+      formData.append("photos", file);
+    }
+    const res = await fetch(`${BASE}/sync/upload-proofs`, {
+      method: "POST",
+      body: formData,
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.message || "Failed to upload proof photos");
+    return body;
+  },
 };
+
 

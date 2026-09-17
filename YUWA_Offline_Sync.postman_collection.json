@@ -1,0 +1,119 @@
+{
+  "info": {
+    "_postman_id": "yuwa-offline-sync-engine-collection",
+    "name": "YUWA Offline Sync Engine Demo",
+    "description": "Demonstration requests for YUWA Offline Sync Engine: batch ingestion, idempotency deduplication, conflict updates, and proof photo uploads.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Checks server and MongoDB connectivity status."
+      }
+    },
+    {
+      "name": "2. Initial Batch Sync (Create 2 Offline Records)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reports\": [\n    {\n      \"clientGeneratedId\": \"mentor-demo-001\",\n      \"programName\": \"Ecolympics\",\n      \"studentCount\": 35,\n      \"clientCreatedAt\": \"2026-09-17T09:00:00.000Z\",\n      \"activityDetails\": {\n        \"topic\": \"Plastic Segregation\",\n        \"score\": 85\n      },\n      \"photoUrls\": []\n    },\n    {\n      \"clientGeneratedId\": \"mentor-demo-002\",\n      \"programName\": \"Green Gurukul\",\n      \"studentCount\": 20,\n      \"clientCreatedAt\": \"2026-09-17T10:00:00.000Z\",\n      \"activityDetails\": {\n        \"topic\": \"Tree Plantation\"\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/sync/batch",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sync", "batch"]
+        },
+        "description": "Syncs 2 queued offline records. Expects both records to be 'synced'."
+      }
+    },
+    {
+      "name": "3. Idempotency Test (Send Same Batch Again)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reports\": [\n    {\n      \"clientGeneratedId\": \"mentor-demo-001\",\n      \"programName\": \"Ecolympics\",\n      \"studentCount\": 35,\n      \"clientCreatedAt\": \"2026-09-17T09:00:00.000Z\",\n      \"activityDetails\": {\n        \"topic\": \"Plastic Segregation\",\n        \"score\": 85\n      },\n      \"photoUrls\": []\n    },\n    {\n      \"clientGeneratedId\": \"mentor-demo-002\",\n      \"programName\": \"Green Gurukul\",\n      \"studentCount\": 20,\n      \"clientCreatedAt\": \"2026-09-17T10:00:00.000Z\",\n      \"activityDetails\": {\n        \"topic\": \"Tree Plantation\"\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/sync/batch",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sync", "batch"]
+        },
+        "description": "Re-sends the exact same batch. Demonstrates idempotency: results in 'duplicate_ignored' and 0 duplicates created."
+      }
+    },
+    {
+      "name": "4. Conflict Resolution (Update Existing Record)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reports\": [\n    {\n      \"clientGeneratedId\": \"mentor-demo-001\",\n      \"programName\": \"Ecolympics\",\n      \"studentCount\": 45,\n      \"clientCreatedAt\": \"2026-09-17T11:00:00.000Z\",\n      \"activityDetails\": {\n        \"topic\": \"Plastic Segregation\",\n        \"score\": 92,\n        \"notes\": \"Bonus round conducted\"\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/sync/batch",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sync", "batch"]
+        },
+        "description": "Sends updated data with a newer client timestamp. Demonstrates conflict resolution updating the existing record ('status': 'updated')."
+      }
+    },
+    {
+      "name": "5. Proof-of-Work Photo Upload (Multipart)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "photos",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/sync/upload-proofs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sync", "upload-proofs"]
+        },
+        "description": "Uploads proof of work photos. Attach an image file to the 'photos' key."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ]
+}
