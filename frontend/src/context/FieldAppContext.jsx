@@ -41,13 +41,29 @@ export const FieldAppProvider = ({ children }) => {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [selectedSchool, setSelectedSchool] = useState(null);
 
-  // 4. Live Data Collections from MongoDB
+  // 4. Live Data Collections from MongoDB & LocalStorage for Offline Queue
   const [schools, setSchools] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [offlineRecords, setOfflineRecords] = useState([]);
+  const [offlineRecords, setOfflineRecords] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yuwa_offline_records');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [syncLogs, setSyncLogs] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Sync offlineRecords to localStorage whenever updated
+  useEffect(() => {
+    try {
+      localStorage.setItem('yuwa_offline_records', JSON.stringify(offlineRecords));
+    } catch (e) {
+      console.warn('Failed to save offline records to localStorage:', e);
+    }
+  }, [offlineRecords]);
 
   // 5. Evidence Photos stored in current flow
   const [photos, setPhotos] = useState([]);
@@ -251,6 +267,33 @@ export const FieldAppProvider = ({ children }) => {
     return created;
   };
 
+  const saveOfflinePhotos = (photosList) => {
+    const list = photosList || photos;
+    if (!list || list.length === 0) return null;
+
+    const schoolTitle = selectedSchool?.schoolName || selectedSchool?.name || 'Local School';
+    const progTitle = selectedProgram?.name || 'Ecolympics';
+
+    const newRecord = {
+      id: `off-photo-${Date.now()}`,
+      type: 'Photo',
+      title: `${list.length} Evidence Photo${list.length > 1 ? 's' : ''} Stored`,
+      school: schoolTitle,
+      status: 'Pending Sync',
+      timestamp: 'Just now',
+      itemsCount: `${list.length} photo${list.length > 1 ? 's' : ''}`,
+      rawPayload: {
+        photos: list.map(p => ({ url: p.url || p.preview, caption: p.name || 'Field Evidence Photo' })),
+        schoolId: selectedSchool?._id || selectedSchool?.id,
+        schoolName: schoolTitle,
+        program: progTitle
+      }
+    };
+
+    setOfflineRecords(prev => [newRecord, ...prev]);
+    return newRecord;
+  };
+
   const addPhotos = (newPhotoFiles) => {
     const formatted = newPhotoFiles.map((file, idx) => ({
       id: `photo-up-${Date.now()}-${idx}`,
@@ -260,6 +303,11 @@ export const FieldAppProvider = ({ children }) => {
       tag: 'Compressed'
     }));
     setPhotos(prev => [...prev, ...formatted]);
+
+    // If currently offline, automatically stage into offlineRecords
+    if (!effectiveOnline) {
+      saveOfflinePhotos(formatted);
+    }
   };
 
   const removePhoto = (photoId) => {
@@ -275,10 +323,11 @@ export const FieldAppProvider = ({ children }) => {
       const reports = offlineRecords.map((rec) => ({
         clientGeneratedId: rec.id,
         schoolId: rec.rawPayload?.schoolId || null,
+        schoolName: rec.rawPayload?.schoolName || rec.school,
         programName: rec.rawPayload?.program || 'Ecolympics',
-        studentCount: rec.rawPayload?.participantCount || 0,
+        studentCount: rec.rawPayload?.participantCount || (rec.type === 'Participant' ? 1 : 0),
         activityDetails: rec.rawPayload || { title: rec.title },
-        photoUrls: [],
+        photoUrls: rec.rawPayload?.photos?.map(p => p.url).filter(Boolean) || [],
         clientCreatedAt: new Date().toISOString()
       }));
 
@@ -288,6 +337,9 @@ export const FieldAppProvider = ({ children }) => {
 
       setSyncProgress(100);
       setOfflineRecords([]);
+      try {
+        localStorage.removeItem('yuwa_offline_records');
+      } catch {}
       setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       await refreshData();
     } catch (err) {
@@ -326,6 +378,8 @@ export const FieldAppProvider = ({ children }) => {
         activities,
         addActivity,
         offlineRecords,
+        setOfflineRecords,
+        saveOfflinePhotos,
         syncLogs,
         photos,
         addPhotos,

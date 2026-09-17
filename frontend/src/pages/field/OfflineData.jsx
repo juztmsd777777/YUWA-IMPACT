@@ -28,6 +28,7 @@ export const OfflineData = () => {
     participants,
     activities,
     photos,
+    saveOfflinePhotos,
     selectedSchool,
     selectedProgram
   } = useFieldApp();
@@ -35,11 +36,16 @@ export const OfflineData = () => {
   const [localSaveNotice, setLocalSaveNotice] = useState('');
 
   const handleManualSaveLocal = () => {
-    setLocalSaveNotice('All active drafts and cached form entries successfully stored to device IndexedDB/localStorage.');
+    if (photos && photos.length > 0) {
+      saveOfflinePhotos(photos);
+      setLocalSaveNotice(`Successfully saved ${photos.length} photos and drafts to device local queue.`);
+    } else {
+      setLocalSaveNotice('All active drafts and cached form entries successfully stored to device IndexedDB/localStorage.');
+    }
     setTimeout(() => setLocalSaveNotice(''), 4000);
   };
 
-  const pendingCount = offlineRecords.filter(r => r.status === 'Pending Sync').length;
+  const pendingCount = offlineRecords.filter(r => r.status === 'Pending Sync' || r.status === 'pending').length;
 
   return (
     <div className="offline-page-container">

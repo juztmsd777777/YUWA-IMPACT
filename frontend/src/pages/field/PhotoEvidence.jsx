@@ -18,7 +18,7 @@ import '../../styles/Photos.css';
 export const PhotoEvidence = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const { isOnline, photos, addPhotos, removePhoto, selectedSchool, selectedProgram } = useFieldApp();
+  const { isOnline, photos, addPhotos, removePhoto, saveOfflinePhotos, selectedSchool, selectedProgram } = useFieldApp();
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -90,18 +90,23 @@ export const PhotoEvidence = () => {
     }
 
     setIsUploading(true);
-    setUploadProgress(20);
-
-    // Simulate progressive chunk upload
-    setTimeout(() => setUploadProgress(60), 300);
-    setTimeout(() => setUploadProgress(95), 600);
+    setUploadProgress(30);
 
     setTimeout(async () => {
-      await photoService.uploadPhotos(photos, 'current-activity');
-      setUploadProgress(100);
-      setIsUploading(false);
-      setUploadSuccess(true);
-    }, 900);
+      try {
+        if (isOnline) {
+          await photoService.uploadPhotos(photos, 'current-activity');
+        } else {
+          saveOfflinePhotos(photos);
+        }
+      } catch (err) {
+        saveOfflinePhotos(photos);
+      } finally {
+        setUploadProgress(100);
+        setIsUploading(false);
+        setUploadSuccess(true);
+      }
+    }, 600);
   };
 
   return (
