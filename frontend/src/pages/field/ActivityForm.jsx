@@ -11,13 +11,13 @@ import {
   X
 } from 'lucide-react';
 import { useFieldApp } from '../../context/FieldAppContext';
-import { initialPrograms } from '../../data/mockData';
 import { activityService } from '../../services/activityService';
 import '../../styles/Activities.css';
 
 export const ActivityForm = () => {
   const navigate = useNavigate();
   const {
+    programs,
     schools,
     selectedSchool,
     setSelectedSchool,
@@ -29,19 +29,17 @@ export const ActivityForm = () => {
 
   // Form state prefilled from workflow context
   const [programId, setProgramId] = useState(
-    selectedProgram?.id || initialPrograms[0].id
+    selectedProgram?._id || selectedProgram?.id || 'Ecolympics'
   );
   const [schoolId, setSchoolId] = useState(
-    selectedSchool?.id || schools[0]?.id || ''
+    selectedSchool?._id || selectedSchool?.id || schools[0]?._id || schools[0]?.id || ''
   );
-  const [activityType, setActivityType] = useState('Tree Plantation');
-  const [activityName, setActivityName] = useState('Tree Plantation Drive');
-  const [date, setDate] = useState('2025-09-16');
-  const [participantsCount, setParticipantsCount] = useState('25');
-  const [averageScore, setAverageScore] = useState('82');
-  const [description, setDescription] = useState(
-    'Students participated enthusiastically in native tree planting and composting setup on school grounds.'
-  );
+  const [activityType, setActivityType] = useState('Cleanliness Drive');
+  const [activityName, setActivityName] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [participantsCount, setParticipantsCount] = useState('');
+  const [averageScore, setAverageScore] = useState('');
+  const [description, setDescription] = useState('');
 
   // UI state
   const [formError, setFormError] = useState('');
@@ -64,14 +62,15 @@ export const ActivityForm = () => {
       return;
     }
 
-    const matchedSchool = schools.find((s) => s.id === schoolId) || selectedSchool;
-    const matchedProgram = initialPrograms.find((p) => p.id === programId) || selectedProgram;
+    const matchedSchool = schools.find((s) => (s._id || s.id) === schoolId) || selectedSchool;
+    const matchedProgram = programs.find((p) => (p._id || p.id) === programId) || selectedProgram;
 
     const activityData = {
-      programId,
-      programName: matchedProgram?.name || 'Climate Program',
-      schoolId,
-      schoolName: matchedSchool ? `${matchedSchool.name}, ${matchedSchool.location}` : 'Local School',
+      programId: matchedProgram?._id || programId,
+      program: matchedProgram?.name || selectedProgram?.name || 'Ecolympics',
+      programName: matchedProgram?.name || selectedProgram?.name || 'Ecolympics',
+      schoolId: matchedSchool?._id || schoolId,
+      schoolName: matchedSchool ? (matchedSchool.schoolName || matchedSchool.name) : 'Local School',
       activityType,
       activityName: activityName.trim(),
       date,
@@ -80,13 +79,13 @@ export const ActivityForm = () => {
       description: description.trim()
     };
 
-    // Call service abstraction and update context state
-    await activityService.createActivity(activityData);
-    const added = addActivity(activityData);
+    // Save directly to MongoDB via context and service
+    const added = await addActivity(activityData);
 
-    setSuccessMessage(`Activity "${added.activityName}" saved successfully!`);
+    setSuccessMessage(`Activity "${added?.activityName || activityName}" saved successfully to database!`);
     setFormError('');
   };
+
 
   return (
     <div className="activities-page-container">
@@ -166,20 +165,24 @@ export const ActivityForm = () => {
                 Program <span className="required-star">*</span>
               </label>
               <div className="program-radio-toggle-group">
-                {initialPrograms.map((prog) => {
-                  const isActive = programId === prog.id;
+                {(programs.length > 0 ? programs : [
+                  { _id: 'Ecolympics', name: 'Ecolympics' },
+                  { _id: 'Green Gurukul', name: 'Green Gurukul' }
+                ]).map((prog) => {
+                  const pId = prog._id || prog.id;
+                  const isActive = programId === pId || selectedProgram?.name === prog.name;
                   return (
                     <label
-                      key={prog.id}
+                      key={pId}
                       className={`program-radio-card ${isActive ? 'active' : ''}`}
                     >
                       <input
                         type="radio"
                         name="activityProgram"
-                        value={prog.id}
+                        value={pId}
                         checked={isActive}
                         onChange={() => {
-                          setProgramId(prog.id);
+                          setProgramId(pId);
                           setSelectedProgram(prog);
                         }}
                       />
@@ -200,15 +203,19 @@ export const ActivityForm = () => {
                 value={schoolId}
                 onChange={(e) => {
                   setSchoolId(e.target.value);
-                  const found = schools.find((s) => s.id === e.target.value);
+                  const found = schools.find((s) => (s._id || s.id) === e.target.value);
                   if (found) setSelectedSchool(found);
                 }}
               >
-                {schools.map((sch) => (
-                  <option key={sch.id} value={sch.id}>
-                    {sch.name} — {sch.location}
-                  </option>
-                ))}
+                {schools.length === 0 && <option value="">Loading schools from database...</option>}
+                {schools.map((sch) => {
+                  const sId = sch._id || sch.id;
+                  return (
+                    <option key={sId} value={sId}>
+                      {sch.schoolName || sch.name} — {sch.location}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

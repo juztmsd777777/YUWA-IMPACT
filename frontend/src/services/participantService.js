@@ -1,35 +1,42 @@
 import { API_ENDPOINTS } from './apiConfig';
-import { initialParticipants } from '../data/mockData';
 
 export const participantService = {
   /**
-   * Fetch participants, optionally filtered by schoolId
+   * Fetch participants from the database, optionally filtered by schoolId
    */
   async getParticipants(schoolId = null) {
     try {
-      // Future integration point for Member 3:
-      // const url = schoolId ? `${API_ENDPOINTS.PARTICIPANTS}?schoolId=${schoolId}` : API_ENDPOINTS.PARTICIPANTS;
-      // const res = await fetch(url);
-      // if (res.ok) return await res.json();
-      if (!schoolId) return initialParticipants;
-      return initialParticipants.filter(p => p.schoolId === schoolId);
+      const url = schoolId ? `${API_ENDPOINTS.PARTICIPANTS}?schoolId=${schoolId}` : API_ENDPOINTS.PARTICIPANTS;
+      const res = await fetch(url);
+      if (res.ok) {
+        const result = await res.json();
+        return result.data || result || [];
+      }
+      return [];
     } catch (err) {
-      console.warn('[participantService] Error fetching participants:', err.message);
-      return initialParticipants;
+      console.error('[participantService] Error fetching participants from database:', err.message);
+      return [];
     }
   },
 
   /**
-   * Register a new participant
+   * Register a new participant in the database
    */
   async createParticipant(participantData) {
-    console.info('[participantService] Creating participant:', participantData);
-    const newParticipant = {
-      id: `part-${Date.now()}`,
-      ...participantData,
-      status: 'Active',
-      addedAt: new Date().toISOString().split('T')[0]
-    };
-    return newParticipant;
+    try {
+      const res = await fetch(API_ENDPOINTS.PARTICIPANTS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(participantData)
+      });
+      if (res.ok) {
+        const result = await res.json();
+        return result.data || result;
+      }
+      throw new Error(`Failed to create participant: ${res.status}`);
+    } catch (err) {
+      console.error('[participantService] Error creating participant:', err.message);
+      throw err;
+    }
   }
 };

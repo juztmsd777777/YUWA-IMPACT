@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw,
   CheckCircle2,
@@ -16,7 +17,9 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import '../../styles/SyncStatus.css';
 
 export const SyncStatus = () => {
+  const navigate = useNavigate();
   const {
+
     isOnline,
     syncProgress,
     isSyncing,

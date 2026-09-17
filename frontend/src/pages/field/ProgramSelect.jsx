@@ -2,12 +2,16 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, GraduationCap, CheckCircle2, ChevronRight, Check } from 'lucide-react';
 import { useFieldApp } from '../../context/FieldAppContext';
-import { initialPrograms } from '../../data/mockData';
 import '../../styles/Programs.css';
 
 export const ProgramSelect = () => {
   const navigate = useNavigate();
-  const { selectedProgram, setSelectedProgram } = useFieldApp();
+  const { programs, selectedProgram, setSelectedProgram } = useFieldApp();
+
+  const displayPrograms = programs.length > 0 ? programs : [
+    { _id: 'eco-default', name: 'Ecolympics', description: 'Youth climate challenge & competitive environmental waste audit olympiad for secondary schools' },
+    { _id: 'gg-default', name: 'Green Gurukul', description: 'Year-round experiential climate curriculum, composting labs, and campus biodiversity stewardship' }
+  ];
 
   const handleSelectProgram = (program) => {
     setSelectedProgram(program);
@@ -43,9 +47,11 @@ export const ProgramSelect = () => {
 
       {/* Program Cards Grid */}
       <div className="programs-cards-grid">
-        {initialPrograms.map((program) => {
-          const isSelected = selectedProgram?.id === program.id;
-          const isEcolympics = program.id === 'prog-ecolympics';
+        {displayPrograms.map((program) => {
+          const progId = program._id || program.id;
+          const isSelected = (selectedProgram?._id && selectedProgram._id === progId) || selectedProgram?.name === program.name;
+          const isEcolympics = program.name.toLowerCase().includes('ecolympics');
+
 
           return (
             <div

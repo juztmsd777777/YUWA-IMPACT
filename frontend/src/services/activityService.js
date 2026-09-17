@@ -1,33 +1,41 @@
 import { API_ENDPOINTS } from './apiConfig';
-import { initialActivities } from '../data/mockData';
 
 export const activityService = {
   /**
-   * Fetch recent activities
+   * Fetch activities from the database
    */
   async getActivities() {
     try {
-      // Future integration point for Member 3:
-      // const res = await fetch(API_ENDPOINTS.ACTIVITIES);
-      // if (res.ok) return await res.json();
-      return initialActivities;
+      const res = await fetch(API_ENDPOINTS.ACTIVITIES);
+      if (res.ok) {
+        const result = await res.json();
+        return result.data || result || [];
+      }
+      return [];
     } catch (err) {
-      console.warn('[activityService] Error fetching activities:', err.message);
-      return initialActivities;
+      console.error('[activityService] Error fetching activities from database:', err.message);
+      return [];
     }
   },
 
   /**
-   * Record a new field activity
+   * Record a new field activity in the database
    */
   async createActivity(activityData) {
-    console.info('[activityService] Recording activity:', activityData);
-    const newActivity = {
-      id: `act-${Date.now()}`,
-      ...activityData,
-      timeAgo: 'Just now',
-      status: 'Pending Sync'
-    };
-    return newActivity;
+    try {
+      const res = await fetch(API_ENDPOINTS.ACTIVITIES, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activityData)
+      });
+      if (res.ok) {
+        const result = await res.json();
+        return result.data || result;
+      }
+      throw new Error(`Failed to create activity: ${res.status}`);
+    } catch (err) {
+      console.error('[activityService] Error recording activity:', err.message);
+      throw err;
+    }
   }
 };

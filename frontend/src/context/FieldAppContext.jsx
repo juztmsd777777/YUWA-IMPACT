@@ -1,13 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  initialFieldWorker,
-  initialPrograms,
-  initialSchools,
-  initialParticipants,
-  initialActivities,
-  initialOfflineRecords,
-  initialSyncLogs
-} from '../data/mockData';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { schoolService } from '../services/schoolService';
+import { participantService } from '../services/participantService';
+import { activityService } from '../services/activityService';
+import { syncService } from '../services/syncService';
 
 const FieldAppContext = createContext(null);
 
@@ -16,9 +11,7 @@ export const FieldAppProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
-  // Manual override for testing offline simulation in browser
   const [manualOfflineSimulation, setManualOfflineSimulation] = useState(false);
-
   const effectiveOnline = isOnline && !manualOfflineSimulation;
 
   useEffect(() => {
@@ -35,104 +28,210 @@ export const FieldAppProvider = ({ children }) => {
   }, []);
 
   // 2. User & Field Worker
-  const [fieldWorker] = useState(initialFieldWorker);
+  const [fieldWorker] = useState({
+    id: 'fw-yuwa-01',
+    name: 'Priya Sharma',
+    role: 'Field Coordinator',
+    location: 'Warangal & Dehradun Region',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
+  });
 
   // 3. Workflow State (Persisted across steps)
-  const [selectedProgram, setSelectedProgram] = useState(initialPrograms[0]); // Default to Ecolympics
-  const [selectedSchool, setSelectedSchool] = useState(initialSchools[0]);   // Default to ZP High School
+  const [programs, setPrograms] = useState([]);
+  const [selectedProgram, setSelectedProgram] = useState(null);
+  const [selectedSchool, setSelectedSchool] = useState(null);
 
-  // 4. Data Collections
-  const [schools, setSchools] = useState(initialSchools);
-  const [participants, setParticipants] = useState(initialParticipants);
-  const [activities, setActivities] = useState(initialActivities);
-  const [offlineRecords, setOfflineRecords] = useState(initialOfflineRecords);
-  const [syncLogs, setSyncLogs] = useState(initialSyncLogs);
+  // 4. Live Data Collections from MongoDB
+  const [schools, setSchools] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [offlineRecords, setOfflineRecords] = useState([]);
+  const [syncLogs, setSyncLogs] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // 5. Evidence Photos stored in current flow
-  const [photos, setPhotos] = useState([
-    {
-      id: 'photo-01',
-      name: 'tree_plantation_01.jpg',
-      size: '320 KB',
-      url: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
-      tag: 'Compressed'
-    },
-    {
-      id: 'photo-02',
-      name: 'students_group_02.jpg',
-      size: '290 KB',
-      url: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&auto=format&fit=crop&q=80',
-      tag: 'Compressed'
-    },
-    {
-      id: 'photo-03',
-      name: 'waste_segregation_03.jpg',
-      size: '310 KB',
-      url: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&auto=format&fit=crop&q=80',
-      tag: 'Compressed'
-    },
-    {
-      id: 'photo-04',
-      name: 'sapling_care_04.jpg',
-      size: '305 KB',
-      url: 'https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?w=400&auto=format&fit=crop&q=80',
-      tag: 'Compressed'
-    }
-  ]);
+  const [photos, setPhotos] = useState([]);
 
   // 6. Sync Statistics
-  const [syncProgress, setSyncProgress] = useState(68);
+  const [syncProgress, setSyncProgress] = useState(100);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState('14 Sep 2025, 06:12 PM');
+  const [lastSyncTime, setLastSyncTime] = useState('Checking database...');
 
-  // Helper Actions
-  const addParticipant = (newParticipant) => {
-    const created = {
-      id: `part-${Date.now()}`,
-      ...newParticipant,
-      status: 'Active',
-      addedAt: new Date().toISOString().split('T')[0]
+  // Fetch all live data from database
+  const refreshData = useCallback(async () => {
+    setIsLoadingData(true);
+    try {
+      // Fetch programs from API
+      const progsRes = await fetch('/api/programs').catch(() => null);
+      if (progsRes && progsRes.ok) {
+        const progsData = await progsRes.json();
+        const progsList = progsData.data || progsData || [];
+        setPrograms(progsList);
+        if (progsList.length > 0 && !selectedProgram) {
+          setSelectedProgram(progsList[0]);
+        }
+      }
+
+      // Fetch live schools from DB
+      const dbSchools = await schoolService.getSchools();
+      setSchools(dbSchools);
+      if (dbSchools.length > 0 && !selectedSchool) {
+        setSelectedSchool(dbSchools[0]);
+      }
+
+      // Fetch live participants from DB
+      const dbParticipants = await participantService.getParticipants();
+      setParticipants(dbParticipants);
+
+      // Fetch live activities from DB
+      const dbActivities = await activityService.getActivities();
+      setActivities(dbActivities);
+
+      // Extract real photos from activities
+      const allPhotos = [];
+      dbActivities.forEach((act, actIdx) => {
+        if (Array.isArray(act.photos)) {
+          act.photos.forEach((ph, phIdx) => {
+            const url = typeof ph === 'string' ? ph : (ph.url || '');
+            if (url) {
+              allPhotos.push({
+                id: `db-photo-${act._id || actIdx}-${phIdx}`,
+                name: act.activityName || `Evidence Photo ${phIdx + 1}`,
+                size: '350 KB',
+                url: url,
+                tag: act.activityType || 'Field Evidence'
+              });
+            }
+          });
+        }
+      });
+      setPhotos(allPhotos);
+
+      // Fetch live sync status & logs from DB
+      const syncStatus = await syncService.getSyncStatus();
+      if (syncStatus) {
+        setSyncProgress(syncStatus.progressPercent || 100);
+        setSyncLogs(syncStatus.logs || []);
+        if (syncStatus.lastSynced) {
+          try {
+            setLastSyncTime(new Date(syncStatus.lastSynced).toLocaleString());
+          } catch {
+            setLastSyncTime(String(syncStatus.lastSynced));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[FieldAppContext] Error fetching database data:', err);
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [selectedProgram, selectedSchool]);
+
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  // Actions
+  const addParticipant = async (newParticipant) => {
+    const payload = {
+      name: newParticipant.fullName || newParticipant.name,
+      fullName: newParticipant.fullName || newParticipant.name,
+      age: parseInt(newParticipant.age, 10) || 14,
+      gender: newParticipant.gender || 'Prefer not to say',
+      schoolId: newParticipant.schoolId || selectedSchool?._id || selectedSchool?.id,
+      schoolName: newParticipant.schoolName || selectedSchool?.schoolName || selectedSchool?.name || '',
+      gradeOrClass: newParticipant.className || newParticipant.gradeOrClass || 'Class 8',
+      className: newParticipant.className || newParticipant.gradeOrClass || 'Class 8',
+      contact: newParticipant.contact || '',
+      score: parseInt(newParticipant.score, 10) || 80,
+      notes: newParticipant.notes || '',
+      program: selectedProgram?.name || 'Ecolympics'
+    };
+
+    let created = null;
+
+    if (effectiveOnline) {
+      try {
+        created = await participantService.createParticipant(payload);
+        setParticipants(prev => [created, ...prev]);
+        return created;
+      } catch (err) {
+        console.warn('Network error saving participant, queueing offline:', err);
+      }
+    }
+
+    // Offline fallback queue
+    created = {
+      id: `local-part-${Date.now()}`,
+      ...payload,
+      status: 'Pending Sync'
     };
     setParticipants(prev => [created, ...prev]);
+    setOfflineRecords(prev => [
+      {
+        id: `off-part-${Date.now()}`,
+        type: 'Participant',
+        title: `Participant: ${created.fullName}`,
+        school: created.schoolName || 'Local School',
+        status: 'Pending Sync',
+        timestamp: 'Just now',
+        itemsCount: `Class ${created.className}`,
+        rawPayload: payload
+      },
+      ...prev
+    ]);
 
-    // If offline, also record in offline queue
-    if (!effectiveOnline) {
-      setOfflineRecords(prev => [
-        {
-          id: `off-part-${Date.now()}`,
-          type: 'Participant',
-          title: `Participant: ${created.fullName}`,
-          school: created.schoolName || selectedSchool?.name || 'Local School',
-          status: 'Pending Sync',
-          timestamp: 'Just now',
-          itemsCount: `Class ${created.className}`
-        },
-        ...prev
-      ]);
-    }
     return created;
   };
 
-  const addActivity = (activityData) => {
-    const created = {
-      id: `act-${Date.now()}`,
-      ...activityData,
-      timeAgo: 'Just now',
-      status: effectiveOnline ? 'Pending Sync' : 'Saved Locally',
-      photosCount: photos.length
+  const addActivity = async (activityData) => {
+    const payload = {
+      schoolId: activityData.schoolId || selectedSchool?._id || selectedSchool?.id,
+      schoolName: activityData.schoolName || selectedSchool?.schoolName || selectedSchool?.name || '',
+      program: activityData.program || selectedProgram?.name || 'Ecolympics',
+      programName: activityData.program || selectedProgram?.name || 'Ecolympics',
+      activityName: activityData.activityName,
+      title: activityData.activityName,
+      name: activityData.activityName,
+      activityType: activityData.activityType || 'Cleanliness Drive',
+      date: activityData.date || new Date().toISOString(),
+      description: activityData.description || '',
+      participantCount: parseInt(activityData.participantsCount, 10) || 0,
+      participantsCount: parseInt(activityData.participantsCount, 10) || 0,
+      averageScore: parseInt(activityData.averageScore, 10) || 80,
+      photos: photos.map(p => ({ url: p.url, caption: p.name }))
+    };
+
+    let created = null;
+
+    if (effectiveOnline) {
+      try {
+        created = await activityService.createActivity(payload);
+        setActivities(prev => [created, ...prev]);
+        refreshData();
+        return created;
+      } catch (err) {
+        console.warn('Network error saving activity, queueing offline:', err);
+      }
+    }
+
+    // Offline fallback queue
+    created = {
+      id: `local-act-${Date.now()}`,
+      ...payload,
+      status: 'Pending Sync'
     };
     setActivities(prev => [created, ...prev]);
-
-    // Add to local offline records queue
     setOfflineRecords(prev => [
       {
         id: `off-${Date.now()}`,
         type: 'Activity',
         title: created.activityName,
-        school: created.schoolName || selectedSchool?.name || 'Local School',
+        school: created.schoolName || 'Local School',
         status: 'Pending Sync',
         timestamp: 'Just now',
-        itemsCount: `${created.participantsCount || 0} participants, ${photos.length} photos`
+        itemsCount: `${created.participantsCount} participants`,
+        rawPayload: payload
       },
       ...prev
     ]);
@@ -145,7 +244,7 @@ export const FieldAppProvider = ({ children }) => {
       id: `photo-up-${Date.now()}-${idx}`,
       name: file.name || `photo_${idx + 1}.jpg`,
       size: `${Math.round((file.size || 320000) / 1024)} KB`,
-      url: file.preview || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
+      url: file.preview || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
       tag: 'Compressed'
     }));
     setPhotos(prev => [...prev, ...formatted]);
@@ -159,39 +258,40 @@ export const FieldAppProvider = ({ children }) => {
     setIsSyncing(true);
     setSyncProgress(35);
 
-    setTimeout(() => {
-      setSyncProgress(75);
-    }, 600);
+    try {
+      // Build reports payload from offline queue
+      const reports = offlineRecords.map((rec) => ({
+        clientGeneratedId: rec.id,
+        schoolId: rec.rawPayload?.schoolId || null,
+        programName: rec.rawPayload?.program || 'Ecolympics',
+        studentCount: rec.rawPayload?.participantCount || 0,
+        activityDetails: rec.rawPayload || { title: rec.title },
+        photoUrls: [],
+        clientCreatedAt: new Date().toISOString()
+      }));
 
-    setTimeout(() => {
+      if (reports.length > 0) {
+        await syncService.triggerSync({ reports });
+      }
+
       setSyncProgress(100);
+      setOfflineRecords([]);
+      setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      await refreshData();
+    } catch (err) {
+      console.error('Sync failed:', err);
+    } finally {
       setIsSyncing(false);
-      setLastSyncTime('Just now');
-      // Mark pending items synced
-      setOfflineRecords(prev =>
-        prev.map(r => ({ ...r, status: 'Synced' }))
-      );
-      setSyncLogs(prev => [
-        {
-          id: `sync-new-${Date.now()}`,
-          entity: 'Full Batch Sync',
-          details: `${offlineRecords.length} records processed`,
-          status: 'Success',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        },
-        ...prev
-      ]);
-    }, 1200);
+    }
   };
 
-  const retryFailedRecords = () => {
-    setSyncLogs(prev =>
-      prev.map(log =>
-        log.status === 'Failed'
-          ? { ...log, status: 'Success', details: '1 record resolved & synced' }
-          : log
-      )
-    );
+  const retryFailedRecords = async () => {
+    try {
+      await syncService.retryFailed();
+      await refreshData();
+    } catch (err) {
+      console.error('Retry failed:', err);
+    }
   };
 
   return (
@@ -202,12 +302,13 @@ export const FieldAppProvider = ({ children }) => {
         manualOfflineSimulation,
         setManualOfflineSimulation,
         fieldWorker,
+        programs,
         selectedProgram,
         setSelectedProgram,
-        selectedSchool,
-        setSelectedSchool,
         schools,
         setSchools,
+        selectedSchool,
+        setSelectedSchool,
         participants,
         addParticipant,
         activities,
@@ -221,7 +322,9 @@ export const FieldAppProvider = ({ children }) => {
         isSyncing,
         lastSyncTime,
         triggerSync,
-        retryFailedRecords
+        retryFailedRecords,
+        refreshData,
+        isLoadingData
       }}
     >
       {children}

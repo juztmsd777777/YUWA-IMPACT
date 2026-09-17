@@ -1,49 +1,62 @@
 import { API_ENDPOINTS } from './apiConfig';
-import { initialSchools } from '../data/mockData';
 
 export const schoolService = {
   /**
-   * Fetch list of schools
-   * Fallback to mock data if backend API is not yet available
+   * Fetch list of schools from the MongoDB database
    */
   async getSchools(query = {}) {
     try {
-      // Future integration point for Member 3:
-      // const response = await fetch(API_ENDPOINTS.SCHOOLS);
-      // if (response.ok) return await response.json();
-      return initialSchools;
+      const url = new URL(API_ENDPOINTS.SCHOOLS);
+      Object.entries(query).forEach(([k, v]) => {
+        if (v) url.searchParams.append(k, v);
+      });
+      const response = await fetch(url.toString());
+      if (response.ok) {
+        const result = await response.json();
+        return result.data || result || [];
+      }
+      return [];
     } catch (err) {
-      console.warn('[schoolService] Backend not reachable, using local mock data:', err.message);
-      return initialSchools;
+      console.error('[schoolService] Error fetching schools from database:', err.message);
+      return [];
     }
   },
 
   /**
-   * Fetch single school by ID
+   * Fetch single school by ID from the MongoDB database
    */
   async getSchoolById(schoolId) {
     try {
-      // Future integration point for Member 3:
-      // const response = await fetch(API_ENDPOINTS.SCHOOL_BY_ID(schoolId));
-      // if (response.ok) return await response.json();
-      const school = initialSchools.find(s => s.id === schoolId);
-      return school || null;
+      const response = await fetch(API_ENDPOINTS.SCHOOL_BY_ID(schoolId));
+      if (response.ok) {
+        const result = await response.json();
+        return result.data || result;
+      }
+      return null;
     } catch (err) {
-      console.warn('[schoolService] Error fetching school:', err.message);
-      return initialSchools.find(s => s.id === schoolId) || null;
+      console.error('[schoolService] Error fetching school from database:', err.message);
+      return null;
     }
   },
 
   /**
-   * Placeholder for school creation (owned by Member 3)
+   * Create school in the MongoDB database
    */
   async createSchool(schoolData) {
-    console.info('[schoolService] createSchool called with:', schoolData);
-    return {
-      id: `sch-${Date.now()}`,
-      ...schoolData,
-      participantsCount: 0,
-      totalActivities: 0
-    };
+    try {
+      const response = await fetch(API_ENDPOINTS.SCHOOLS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schoolData)
+      });
+      if (response.ok) {
+        const result = await response.json();
+        return result.data || result;
+      }
+      throw new Error(`Failed to create school: ${response.status}`);
+    } catch (err) {
+      console.error('[schoolService] Error creating school:', err.message);
+      throw err;
+    }
   }
 };

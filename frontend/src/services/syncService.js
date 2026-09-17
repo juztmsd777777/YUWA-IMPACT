@@ -1,52 +1,74 @@
 import { API_ENDPOINTS } from './apiConfig';
-import { initialSyncLogs } from '../data/mockData';
 
 export const syncService = {
   /**
-   * Fetch current sync status, records counts, and recent sync activity
-   * Integration point for Member 4 (Offline & Sync backend service)
+   * Fetch current sync status, records counts, and recent sync activity directly from database
    */
   async getSyncStatus() {
-    return {
-      progressPercent: 68,
-      totalRecords: 24,
-      syncedRecords: 18,
-      pendingRecords: 3,
-      failedRecords: 1,
-      lastSynced: '14 Sep 2025, 06:12 PM',
-      logs: initialSyncLogs
-    };
+    try {
+      const res = await fetch(API_ENDPOINTS.SYNC_STATUS);
+      if (res.ok) {
+        return await res.json();
+      }
+      return {
+        progressPercent: 100,
+        totalRecords: 0,
+        syncedRecords: 0,
+        pendingRecords: 0,
+        failedRecords: 0,
+        lastSynced: new Date().toISOString(),
+        logs: []
+      };
+    } catch (err) {
+      console.error('[syncService] Error fetching sync status:', err.message);
+      return {
+        progressPercent: 100,
+        totalRecords: 0,
+        syncedRecords: 0,
+        pendingRecords: 0,
+        failedRecords: 0,
+        lastSynced: new Date().toISOString(),
+        logs: []
+      };
+    }
   },
 
   /**
-   * Trigger synchronization
+   * Trigger batch synchronization with backend
    */
-  async triggerSync() {
-    console.info('[syncService] Triggering manual synchronization...');
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          status: 'success',
-          message: 'Sync completed for all pending records',
-          syncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-      }, 1000);
-    });
+  async triggerSync(payload = {}) {
+    try {
+      const res = await fetch(API_ENDPOINTS.SYNC_TRIGGER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      throw new Error(`Sync trigger failed: ${res.status}`);
+    } catch (err) {
+      console.error('[syncService] Error triggering sync:', err.message);
+      throw err;
+    }
   },
 
   /**
-   * Retry failed records
+   * Retry failed records in the database
    */
   async retryFailed() {
-    console.info('[syncService] Retrying failed sync records...');
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          status: 'success',
-          retriedCount: 1,
-          message: 'Failed records re-processed successfully'
-        });
-      }, 800);
-    });
+    try {
+      const res = await fetch(API_ENDPOINTS.SYNC_RETRY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      throw new Error(`Sync retry failed: ${res.status}`);
+    } catch (err) {
+      console.error('[syncService] Error retrying failed records:', err.message);
+      throw err;
+    }
   }
 };

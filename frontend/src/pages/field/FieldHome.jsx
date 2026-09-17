@@ -23,10 +23,15 @@ import '../../styles/Home.css';
 
 export const FieldHome = () => {
   const navigate = useNavigate();
-  const { isOnline, fieldWorker, activities, offlineRecords } = useFieldApp();
+  const { isOnline, fieldWorker, schools, activities, offlineRecords } = useFieldApp();
 
   // Current formatted date/time
-  const formattedDate = 'Tue, 16 Sep 2025 • 10:24 AM';
+  const formattedDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
   const pendingRecordsCount = offlineRecords.filter(r => r.status === 'Pending Sync').length;
 
   return (
@@ -71,9 +76,9 @@ export const FieldHome = () => {
             <Building2 size={24} />
           </div>
           <div className="metric-content">
-            <span className="metric-label">Schools visited</span>
+            <span className="metric-label">Schools registered</span>
             <div className="metric-value-row">
-              <span className="metric-value">{fieldWorker.stats.schoolsVisited}</span>
+              <span className="metric-value">{schools.length}</span>
               <span className="metric-tag">schools</span>
             </div>
           </div>
@@ -84,14 +89,15 @@ export const FieldHome = () => {
             <CheckCircle2 size={24} />
           </div>
           <div className="metric-content">
-            <span className="metric-label">Activities completed</span>
+            <span className="metric-label">Activities recorded</span>
             <div className="metric-value-row">
-              <span className="metric-value">{fieldWorker.stats.activitiesCompleted}</span>
+              <span className="metric-value">{activities.length}</span>
               <span className="metric-tag">done</span>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* 3. Quick Actions */}
       <section className="quick-actions-section">
@@ -167,28 +173,42 @@ export const FieldHome = () => {
           </div>
 
           <div className="recent-activities-list">
-            {activities.slice(0, 3).map((act) => (
-              <div key={act.id} className="recent-activity-item">
-                <div className="activity-item-left">
-                  <div className="activity-item-icon">
-                    <TreePine size={20} />
-                  </div>
-                  <div className="activity-item-text">
-                    <span className="activity-item-name">{act.activityName}</span>
-                    <span className="activity-item-school">{act.schoolName}</span>
-                  </div>
-                </div>
-
-                <div className="activity-item-right">
-                  <StatusBadge
-                    status={act.status}
-                    text={act.status}
-                    size="sm"
-                  />
-                  <span className="activity-item-time">{act.timeAgo}</span>
-                </div>
+            {activities.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                No activities recorded yet. Tap "+ Add Activity" above to record one!
               </div>
-            ))}
+            ) : (
+              activities.slice(0, 4).map((act) => {
+                const actName = act.activityName || act.name || act.title || 'Field Activity';
+                const schName = act.schoolName || (typeof act.schoolId === 'object' ? (act.schoolId?.schoolName || act.schoolId?.name) : '') || 'Partner School';
+                const actKey = act._id || act.id || Math.random();
+                const actDate = act.date ? new Date(act.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recently';
+
+                return (
+                  <div key={actKey} className="recent-activity-item">
+                    <div className="activity-item-left">
+                      <div className="activity-item-icon">
+                        <TreePine size={20} />
+                      </div>
+                      <div className="activity-item-text">
+                        <span className="activity-item-name">{actName}</span>
+                        <span className="activity-item-school">{schName}</span>
+                      </div>
+                    </div>
+
+                    <div className="activity-item-right">
+                      <StatusBadge
+                        status="verified"
+                        text="Recorded"
+                        size="sm"
+                      />
+                      <span className="activity-item-time">{actDate}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
           </div>
         </section>
 

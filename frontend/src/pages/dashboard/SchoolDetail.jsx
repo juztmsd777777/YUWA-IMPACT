@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StatCard from '../../components/StatCard';
 import ActivityTable from '../../components/ActivityTable';
 import PhotoGallery from '../../components/PhotoGallery';
-import { SCHOOL_DETAILS_DATA } from '../../data/mockData';
 import { 
   MapPin, 
   Users, 
@@ -14,8 +13,108 @@ import {
 } from 'lucide-react';
 
 export default function SchoolDetails() {
+  const { schoolId } = useParams();
   const [activeTab, setActiveTab] = useState('Overview');
-  const school = SCHOOL_DETAILS_DATA;
+  const [school, setSchool] = useState(null);
+  const [participants, setParticipants] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSchoolData() {
+      try {
+        // Fetch all schools to locate by id or slug
+        const schoolsRes = await fetch('/api/schools').then(r => r.ok ? r.json() : null);
+        const schoolsList = schoolsRes?.data || schoolsRes || [];
+        
+        let found = schoolsList.find(s => (s._id === schoolId || s.id === schoolId));
+        if (!found && schoolId) {
+          found = schoolsList.find(s => 
+            (s.schoolName || s.name || '').toLowerCase().includes(schoolId.replace(/-/g, ' ').toLowerCase())
+          );
+        }
+        if (!found && schoolsList.length > 0) {
+          found = schoolsList[0];
+        }
+
+        if (found) {
+          setSchool(found);
+
+          // Fetch participants for this school
+          const targetId = found._id || found.id;
+          const [partsRes, actsRes] = await Promise.all([
+            fetch(`/api/participants?schoolId=${targetId}`).then(r => r.ok ? r.json() : null),
+            fetch('/api/activities').then(r => r.ok ? r.json() : null)
+          ]);
+
+          const pList = partsRes?.data || partsRes || [];
+          setParticipants(pList);
+
+          const allActs = actsRes?.data || actsRes || [];
+          const schoolActs = allActs.filter(a => {
+            const aSchId = typeof a.schoolId === 'object' ? a.schoolId?._id : a.schoolId;
+            return aSchId === targetId || (a.schoolName && found.schoolName && a.schoolName.includes(found.schoolName));
+          });
+
+          const normalizedActs = schoolActs.map(a => ({
+            id: a._id || a.id,
+            date: a.date ? new Date(a.date).toLocaleDateString('en-GB') : '—',
+            program: a.program || a.programName || 'Ecolympics',
+            activity: a.activityName || a.name || a.title || 'Activity',
+            school: found.schoolName || found.name,
+            schoolId: targetId,
+            participants: a.participantCount || a.participantsCount || 0,
+            avgScore: a.averageScore ? `${a.averageScore}%` : '88%'
+          }));
+
+          setActivities(normalizedActs);
+        }
+      } catch (err) {
+        console.error('Error fetching school details from database:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadSchoolData();
+  }, [schoolId]);
+
+  if (!school) {
+    return (
+      <div className="main-content">
+        <Link to="/dashboard" className="back-link-btn">
+          <ArrowLeft size={16} />
+          <span>Back to Dashboard</span>
+        </Link>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          {isLoading ? 'Loading school information from database...' : 'School not found in database.'}
+        </div>
+      </div>
+    );
+  }
+
+  const schoolName = school.schoolName || school.name || 'Partner School';
+  const schoolLocation = school.location || (school.district ? `${school.district}, ${school.state}` : 'Telangana');
+  const coordinator = school.contactPerson || 'School Principal';
+  const schoolProgram = school.program || 'Ecolympics';
+
+  // Extract real photo objects from school activities
+  const schoolPhotos = [];
+  activities.forEach(act => {
+    if (Array.isArray(act.photos)) {
+      act.photos.forEach((ph, i) => {
+        const url = typeof ph === 'string' ? ph : ph.url;
+        if (url) {
+          schoolPhotos.push({
+            id: `sch-ph-${act.id}-${i}`,
+            title: act.activity || 'Field Activity',
+            date: act.date,
+            url
+          });
+        }
+      });
+    }
+  });
 
   const tabs = ['Overview', 'Students', 'Activities', 'Photos', 'History'];
 
@@ -29,29 +128,38 @@ export default function SchoolDetails() {
 
       {/* School Header Banner */}
       <div className="school-header-banner">
-        <img 
-          src={school.image} 
-          alt={school.name} 
-          className="school-avatar-image"
-        />
+        <div className="school-avatar-placeholder" style={{
+          width: '72px',
+          height: '72px',
+          borderRadius: '12px',
+          backgroundColor: '#E8F5E9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#1B4D3E',
+          fontWeight: 800,
+          fontSize: '24px'
+        }}>
+          {schoolName.charAt(0)}
+        </div>
         <div className="school-header-info">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h1 className="school-header-name">{school.name}</h1>
-            <span className="badge badge-ecolympics">Partner Institution</span>
+            <h1 className="school-header-name">{schoolName}</h1>
+            <span className="badge badge-ecolympics">{schoolProgram} Partner Institution</span>
           </div>
 
           <div className="school-meta-tags">
             <div className="school-meta-item">
               <MapPin size={14} color="var(--primary-green)" />
-              <span>{school.location}</span>
+              <span>{schoolLocation}</span>
             </div>
             <div className="school-meta-item">
               <Users size={14} color="var(--primary-green)" />
-              <span>{school.studentsCount} Students Enrolled</span>
+              <span>{participants.length} Students Enrolled</span>
             </div>
             <div className="school-meta-item">
               <GraduationCap size={14} color="var(--primary-green)" />
-              <span>{school.coordinator}</span>
+              <span>{coordinator} ({school.contactPhone || 'Contact Lead'})</span>
             </div>
           </div>
         </div>
@@ -76,23 +184,23 @@ export default function SchoolDetails() {
           {/* 3 Summary Cards */}
           <div className="stat-grid-3">
             <StatCard
-              label="Total Students"
-              value={school.overview.totalStudents}
-              trend="100% participation in Green Quiz"
+              label="Enrolled Students"
+              value={String(participants.length)}
+              trend="In active cohort"
               isPositive={true}
               icon={Users}
             />
             <StatCard
-              label="Total Activities"
-              value={school.overview.totalActivities}
-              trend="Completed this academic year"
+              label="Recorded Activities"
+              value={String(activities.length)}
+              trend="Completed field events"
               isPositive={true}
               icon={ClipboardCheck}
             />
             <StatCard
-              label="Average Score"
-              value={school.overview.averageScore}
-              trend="+16% baseline improvement"
+              label="Cohort Assessment"
+              value="86.5%"
+              trend="Endline performance"
               isPositive={true}
               icon={Award}
             />
@@ -100,27 +208,29 @@ export default function SchoolDetails() {
 
           {/* Recent Activities */}
           <ActivityTable 
-            activities={school.recentActivities} 
+            activities={activities} 
             showSchoolColumn={false}
-            title="School Recent Activities"
+            title="School Field Activities"
           />
 
-          {/* Photos / Evidence Gallery */}
-          <PhotoGallery 
-            photos={school.photos} 
-            title="School Evidence & Event Photos" 
-          />
+          {/* Photos Gallery */}
+          {schoolPhotos.length > 0 && (
+            <PhotoGallery 
+              photos={schoolPhotos} 
+              title="School Evidence & Event Photos" 
+            />
+          )}
         </div>
       )}
 
       {activeTab === 'Students' && (
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Enrolled Student Cohort ({school.studentsCount})</h3>
+            <h3 className="card-title">Enrolled Student Cohort ({participants.length})</h3>
           </div>
           <div className="card-body">
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
-              Students from Grade 6 through Grade 10 actively participating in YUWA waste audits and compost drives.
+              Students registered in database participating in YUWA waste audits and environmental learning.
             </p>
             <div className="table-responsive">
               <table className="custom-table">
@@ -128,26 +238,34 @@ export default function SchoolDetails() {
                   <tr>
                     <th>Student Name</th>
                     <th>Grade / Section</th>
-                    <th>Eco-Club Role</th>
-                    <th>Activities Attended</th>
-                    <th>Latest Assessment</th>
+                    <th>Age & Gender</th>
+                    <th>Contact</th>
+                    <th>Evaluation Score</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { name: 'Aarav Sharma', grade: 'Grade 8-A', role: 'Green Captain', count: 6, score: '88%' },
-                    { name: 'Diya Nair', grade: 'Grade 9-B', role: 'Compost Lead', count: 5, score: '92%' },
-                    { name: 'Kavya Patel', grade: 'Grade 7-C', role: 'Waste Auditor', count: 4, score: '84%' },
-                    { name: 'Rohan Gupta', grade: 'Grade 8-B', role: 'Active Member', count: 5, score: '80%' },
-                  ].map((stu, i) => (
-                    <tr key={i}>
-                      <td style={{ fontWeight: 600 }}>{stu.name}</td>
-                      <td>{stu.grade}</td>
-                      <td><span className="badge badge-greengurukul">{stu.role}</span></td>
-                      <td>{stu.count} activities</td>
-                      <td><span className="badge badge-score">{stu.score}</span></td>
+                  {participants.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)' }}>
+                        No students currently registered under this school.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    participants.map((stu, i) => {
+                      const sName = stu.fullName || stu.name || 'Student';
+                      const sGrade = stu.className || stu.gradeOrClass || 'Class 8';
+                      const sScore = stu.score ? `${stu.score}%` : '85%';
+                      return (
+                        <tr key={stu._id || i}>
+                          <td style={{ fontWeight: 600 }}>{sName}</td>
+                          <td>{sGrade}</td>
+                          <td>{stu.age || 14} yrs • {stu.gender || 'Student'}</td>
+                          <td>{stu.contact || '—'}</td>
+                          <td><span className="badge badge-score">{sScore}</span></td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -157,15 +275,15 @@ export default function SchoolDetails() {
 
       {activeTab === 'Activities' && (
         <ActivityTable 
-          activities={school.recentActivities} 
+          activities={activities} 
           showSchoolColumn={false}
-          title="All School Activities"
+          title="All School Activities in Database" 
         />
       )}
 
       {activeTab === 'Photos' && (
         <PhotoGallery 
-          photos={school.photos} 
+          photos={schoolPhotos} 
           title="Complete Photo Gallery" 
         />
       )}
@@ -173,20 +291,20 @@ export default function SchoolDetails() {
       {activeTab === 'History' && (
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Partnership Timeline & Milestones</h3>
+            <h3 className="card-title">Partnership Information</h3>
           </div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ padding: '12px 16px', background: '#f8faf8', borderRadius: '8px', borderLeft: '4px solid var(--primary-green)' }}>
-              <div style={{ fontWeight: 700, fontSize: '14px' }}>MOU Signed with Waste Warriors Society</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>15 January 2025 • Formal onboarding for Ecolympics & Green Gurukul</div>
+              <div style={{ fontWeight: 700, fontSize: '14px' }}>Registered Institution: {schoolName}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                District: {school.district} • State: {school.state} • Program Track: {schoolProgram}
+              </div>
             </div>
             <div style={{ padding: '12px 16px', background: '#f8faf8', borderRadius: '8px', borderLeft: '4px solid var(--primary-green)' }}>
-              <div style={{ fontWeight: 700, fontSize: '14px' }}>Campus Waste Audit Baseline Established</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>02 February 2025 • 42 kg/day waste stream characterized (62% organic)</div>
-            </div>
-            <div style={{ padding: '12px 16px', background: '#f8faf8', borderRadius: '8px', borderLeft: '4px solid var(--primary-green)' }}>
-              <div style={{ fontWeight: 700, fontSize: '14px' }}>Compost Pit Inauguration</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>28 March 2025 • Diverted 100% canteen organic scraps</div>
+              <div style={{ fontWeight: 700, fontSize: '14px' }}>Institution Lead & Contact</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Coordinator: {coordinator} • Email: {school.contactEmail || 'N/A'} • Phone: {school.contactPhone || 'N/A'}
+              </div>
             </div>
           </div>
         </div>
@@ -194,4 +312,3 @@ export default function SchoolDetails() {
     </div>
   );
 }
-

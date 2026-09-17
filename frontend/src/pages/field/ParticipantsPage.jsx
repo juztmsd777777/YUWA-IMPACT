@@ -42,10 +42,13 @@ export const ParticipantsPage = () => {
   const filteredParticipants = useMemo(() => {
     return participants.filter((p) => {
       const query = searchTerm.toLowerCase();
+      const pName = p.fullName || p.name || '';
+      const pClass = p.className || p.gradeOrClass || '';
+      const pSchool = p.schoolName || (typeof p.schoolId === 'object' ? (p.schoolId?.schoolName || p.schoolId?.name) : '') || '';
       return (
-        p.fullName.toLowerCase().includes(query) ||
-        p.className.toLowerCase().includes(query) ||
-        (p.schoolName && p.schoolName.toLowerCase().includes(query))
+        pName.toLowerCase().includes(query) ||
+        pClass.toLowerCase().includes(query) ||
+        pSchool.toLowerCase().includes(query)
       );
     });
   }, [participants, searchTerm]);
@@ -70,25 +73,26 @@ export const ParticipantsPage = () => {
       return;
     }
 
-    const currentSchool = schools.find(s => s.id === schoolId) || selectedSchool;
+    const currentSchool = schools.find(s => (s._id || s.id) === schoolId) || selectedSchool;
 
     const participantData = {
       fullName: fullName.trim(),
+      name: fullName.trim(),
       className,
+      gradeOrClass: className,
       age: parseInt(age, 10) || 14,
       gender,
-      schoolId: currentSchool?.id || '',
-      schoolName: currentSchool?.name || 'Selected School',
+      schoolId: currentSchool?._id || currentSchool?.id || schoolId,
+      schoolName: currentSchool?.schoolName || currentSchool?.name || 'Selected School',
       contact: contact.trim(),
       score: parseInt(score, 10) || 0,
       notes: notes.trim()
     };
 
     // Call service abstraction and update context state
-    await participantService.createParticipant(participantData);
-    const added = addParticipant(participantData);
+    const added = await addParticipant(participantData);
 
-    setSuccessMessage(`Participant "${added.fullName}" saved successfully!`);
+    setSuccessMessage(`Participant "${added?.fullName || fullName}" saved successfully to database!`);
     setFormError('');
 
     // Clear form name for fast subsequent entries
@@ -96,6 +100,7 @@ export const ParticipantsPage = () => {
     setContact('');
     setNotes('');
   };
+
 
   return (
     <div className="participants-page-container">
@@ -340,25 +345,31 @@ export const ParticipantsPage = () => {
           <div className="roster-list">
             {filteredParticipants.length > 0 ? (
               filteredParticipants.map((p) => {
-                const initials = p.fullName
+                const pName = p.fullName || p.name || 'Student';
+                const pClass = p.className || p.gradeOrClass || 'Class 8';
+                const pSchool = p.schoolName || (typeof p.schoolId === 'object' ? (p.schoolId?.schoolName || p.schoolId?.name) : '') || '';
+                const pKey = p._id || p.id || Math.random();
+                const initials = pName
                   .split(' ')
                   .map((n) => n[0])
+                  .filter(Boolean)
                   .join('')
                   .toUpperCase()
-                  .slice(0, 2);
+                  .slice(0, 2) || 'ST';
 
                 return (
-                  <div key={p.id} className="roster-item">
+                  <div key={pKey} className="roster-item">
                     <div className="roster-item-left">
                       <div className="roster-avatar">{initials}</div>
                       <div className="roster-info">
-                        <span className="roster-name">{p.fullName}</span>
+                        <span className="roster-name">{pName}</span>
                         <span className="roster-meta">
-                          {p.className} • {p.age} yrs • {p.gender}
+                          {pClass} • {p.age || 14} yrs • {p.gender || 'Student'}
                         </span>
-                        <span className="roster-school-name">{p.schoolName}</span>
+                        {pSchool && <span className="roster-school-name">{pSchool}</span>}
                       </div>
                     </div>
+
 
                     <div className="roster-item-right">
                       {p.score > 0 && (
