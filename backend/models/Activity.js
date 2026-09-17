@@ -7,6 +7,16 @@ import mongoose from "mongoose";
  */
 const activitySchema = new mongoose.Schema(
   {
+    localId: {
+      type: String,
+      default: '',
+      index: true
+    },
+    clientGeneratedId: {
+      type: String,
+      default: '',
+      index: true
+    },
     schoolId: {
       type: mongoose.Schema.Types.Mixed,
       ref: 'School'
@@ -75,12 +85,17 @@ const activitySchema = new mongoose.Schema(
     photos: {
       type: [mongoose.Schema.Types.Mixed],
       default: []
+    },
+    photoUrls: {
+      type: [String],
+      default: []
     }
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
+    strict: false
   }
 );
 
@@ -95,6 +110,13 @@ activitySchema.pre('validate', function (next) {
   } else if (this.participantsCount && !this.participantCount) {
     this.participantCount = this.participantsCount;
   }
+
+  if (this.photos && Array.isArray(this.photos) && (!this.photoUrls || this.photoUrls.length === 0)) {
+    this.photoUrls = this.photos.map(p => typeof p === 'string' ? p : (p.url || p.fileUrl || ''));
+  } else if (this.photoUrls && Array.isArray(this.photoUrls) && (!this.photos || this.photos.length === 0)) {
+    this.photos = this.photoUrls;
+  }
+
   next();
 });
 
@@ -102,4 +124,3 @@ const Activity = mongoose.models.Activity || mongoose.model('Activity', activity
 
 export default Activity;
 export { Activity };
-

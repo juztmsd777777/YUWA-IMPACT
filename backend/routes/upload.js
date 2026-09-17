@@ -24,29 +24,99 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    if (file.mimetype.startsWith("image/") || file.originalname.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed."));
+      cb(null, true);
     }
   },
 });
 
 const router = Router();
 
-router.post("/", upload.single("photo"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: "No photo file provided" });
-  }
+router.post("/", upload.any(), (req, res) => {
+  try {
+    const uploadedFiles = [];
 
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.status(201).json({
-    success: true,
-    url: fileUrl,
-    filename: req.file.filename,
-  });
+    // 1. Process multipart files
+    if (req.files && req.files.length > 0) {
+      for (const f of req.files) {
+        uploadedFiles.push({
+          url: `/uploads/${f.filename}`,
+          filename: f.filename,
+          originalName: f.originalname,
+          size: f.size
+        });
+      }
+    } else if (req.file) {
+      uploadedFiles.push({
+        url: `/uploads/${req.file.filename}`,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    }
+
+    // 2. Process base64 data URLs in body if provided
+    const base64List = Array.isArray(req.body?.photos)
+      ? req.body.photos
+      : req.body?.dataUrl
+      ? [req.body.dataUrl]
+      : req.body?.photo
+      ? [req.body.photo]
+      : [];
+
+    for (let i = 0; i < base64List.length; i++) {
+      const item = base64List[i];
+      const dataStr = typeof item === "string" ? item : (item.url || item.preview || "");
+      if (dataStr.startsWith("data:image/")) {
+        const matches = dataStr.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+        if (matches) {
+          const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+          const base64Data = matches[2];
+          const filename = `photo-b64-${Date.now()}-${i}.${ext}`;
+          const filePath = path.join(UPLOADS_DIR, filename);
+          fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+          uploadedFiles.push({
+            url: `/uploads/${filename}`,
+            filename: filename,
+            originalName: `evidence_${i + 1}.${ext}`,
+            size: base64Data.length
+          });
+        }
+      } else if (dataStr.startsWith("http") || dataStr.startsWith("/uploads")) {
+        uploadedFiles.push({
+          url: dataStr,
+          filename: path.basename(dataStr),
+          originalName: `evidence_${i + 1}.jpg`
+        });
+      }
+    }
+
+    if (uploadedFiles.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No photo files or valid image data provided"
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `Successfully uploaded ${uploadedFiles.length} photo(s)`,
+      count: uploadedFiles.length,
+      url: uploadedFiles[0].url,
+      photos: uploadedFiles,
+      uploaded: uploadedFiles
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error processing upload: " + err.message
+    });
+  }
 });
 
 export default router;

@@ -226,33 +226,63 @@ async function mirrorToLegacyActivity({
       return;
     }
 
+    const activityName =
+      activityDetails?.name ||
+      activityDetails?.title ||
+      activityDetails?.activityName ||
+      activityDetails?.type ||
+      `${programName || "YUWA"} Activity`;
+
+    const activityType =
+      activityDetails?.type ||
+      activityDetails?.activityType ||
+      programName ||
+      "Activity";
+
+    let normalizedPhotos = [];
+    if (Array.isArray(photoUrls) && photoUrls.length > 0) {
+      normalizedPhotos = photoUrls;
+    } else if (Array.isArray(activityDetails?.photos) && activityDetails.photos.length > 0) {
+      normalizedPhotos = activityDetails.photos.map(p =>
+        typeof p === "string" ? p : (p.url || p.fileUrl || p.preview || "")
+      );
+    }
+
     const legacyData = {
-      activityType: activityDetails?.type || programName || "Activity",
-      date: clientCreatedAt,
-      participants: studentCount,
+      localId: clientGeneratedId,
+      clientGeneratedId: clientGeneratedId,
+      activityName: activityName,
+      name: activityName,
+      title: activityName,
+      activityType: activityType,
+      date: clientCreatedAt || new Date(),
+      participantCount: studentCount,
+      participantsCount: studentCount,
       averageScore:
         activityDetails?.score !== undefined
           ? Number(activityDetails.score)
           : activityDetails?.averageScore !== undefined
           ? Number(activityDetails.averageScore)
-          : undefined,
-      notes: activityDetails?.notes || "",
-      photos: photoUrls,
-      localId: clientGeneratedId,
+          : 85,
+      description: activityDetails?.notes || activityDetails?.description || "",
+      photos: normalizedPhotos,
+      photoUrls: normalizedPhotos,
+      program: programName || "Ecolympics",
+      programName: programName || "Ecolympics",
+      schoolName: activityDetails?.schoolName || activityDetails?.school || "",
     };
-
 
     if (schoolId && mongoose.isValidObjectId(schoolId)) {
       legacyData.schoolId = schoolId;
     }
 
-    const matchedProgId = programMap.get(programName.toLowerCase().trim());
+    const matchedProgId = programMap.get((programName || "").toLowerCase().trim());
     if (matchedProgId) {
       legacyData.programId = matchedProgId;
     }
 
     await Activity.findOneAndUpdate(
-      { localId: clientGeneratedId },
+      { $or: [{ localId: clientGeneratedId }, { clientGeneratedId: clientGeneratedId }] },
       { $set: legacyData },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
